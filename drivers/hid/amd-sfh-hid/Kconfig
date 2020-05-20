@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "AMD SFH HID support"
+	depends on PCI && ACPI
+
+config AMD_SFH_HID
+	tristate "AMD Sensor Fusion Hub"
+	select HID
+	help
+	If you say yes to this option, support will be included for the AMD
+	Sensor Fusion Hub.
+	This driver will enable sensors functionality to user through HID
+	framework. Basically this driver will get data from MP2 FW and
+	provide that data to HID framework.
+	MP2 which is an ARM® Cortex-M4 core based co-processor to x86.
+
+	This driver can also be built as modules. If so, the modules will
+	be called amd-sfh-pci and amd-sfh-hid.
+
+endmenu
