@@ -305,14 +305,16 @@ static const struct acpi_device_id amd_sfh_acpi_match[] = {
 };
 
 MODULE_DEVICE_TABLE(acpi, amd_sfh_acpi_match);
+
 static struct platform_driver amd_sfh_platform_driver = {
 	.probe = amd_sfh_platform_probe,
 	.remove = amd_sfh_platform_remove,
 	.driver = {
 		.name = "amd-sfh-hid",
-		.acpi_match_table = ACPI_PTR(amd_sfh_acpi_match),
+		.acpi_match_table = amd_sfh_acpi_match,
 	},
 };
+
 module_platform_driver(amd_sfh_platform_driver);
 
 MODULE_DESCRIPTION("AMD(R) Sensor Fusion Hub HID platform driver");
