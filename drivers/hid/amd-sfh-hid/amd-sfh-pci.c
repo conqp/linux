@@ -49,8 +49,8 @@ void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
 			  dma_addr_t dma_handle, unsigned int interval)
 {
 	struct amd_sfh_dev *privdata;
-	struct amd_sfh_parm parm;
-	struct amd_sfh_cmd cmd;
+	union amd_sfh_parm parm;
+	union amd_sfh_cmd cmd;
 
 	privdata = pci_get_drvdata(pci_dev);
 
@@ -77,8 +77,8 @@ EXPORT_SYMBOL_GPL(amd_sfh_start_sensor);
 void amd_sfh_stop_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx)
 {
 	struct amd_sfh_dev *privdata;
-	struct amd_sfh_parm parm;
-	struct amd_sfh_cmd cmd;
+	union amd_sfh_parm parm;
+	union amd_sfh_cmd cmd;
 
 	privdata = pci_get_drvdata(pci_dev);
 
@@ -119,8 +119,8 @@ EXPORT_SYMBOL_GPL(amd_sfh_pci_probed);
 static int amd_sfh_stop_all_sensors(struct pci_dev *pci_dev)
 {
 	struct amd_sfh_dev *privdata;
-	struct amd_sfh_parm parm;
-	struct amd_sfh_cmd cmd;
+	union amd_sfh_parm parm;
+	union amd_sfh_cmd cmd;
 
 	privdata = pci_get_drvdata(pci_dev);
 
