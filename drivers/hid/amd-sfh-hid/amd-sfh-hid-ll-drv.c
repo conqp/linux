@@ -109,8 +109,9 @@ static int amd_sfh_hid_ll_open(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	return amd_sfh_start_sensor(hid_data->pci_dev, hid_data->sensor_idx,
-				    hid_data->dma_handle, hid_data->interval);
+	amd_sfh_start_sensor(hid_data->pci_dev, hid_data->sensor_idx,
+			     hid_data->dma_handle, hid_data->interval);
+	return 0;
 }
 
 /**
@@ -121,14 +122,10 @@ static int amd_sfh_hid_ll_open(struct hid_device *hid)
  */
 static void amd_sfh_hid_ll_close(struct hid_device *hid)
 {
-	int rc;
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
 	cancel_delayed_work_sync(&hid_data->work);
-
-	rc = amd_sfh_stop_sensor(hid_data->pci_dev, hid_data->sensor_idx);
-	if (rc)
-		hid_err(hid, "Failed to stop sensor.\n");
+	amd_sfh_stop_sensor(hid_data->pci_dev, hid_data->sensor_idx);
 }
 
 /**

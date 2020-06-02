@@ -120,71 +120,20 @@ enum {
 };
 
 /**
- * SFH event response data
- */
-union amd_sfh_event {
-	u32 ul;
-	struct {
-		u32 response : 4; /*!< bit: 0..3 SFI response_type */
-		u32 status : 3; /*!< bit: 6..5 status_type */
-		u32 out_in_c2p : 1; /*!< bit: 5 0- output in DRAM,1-in C2PMsg */
-		u32 length : 6; /*!< bit: 8..13 length */
-		u32 dbg : 2; /*!< bit: 14.15 dbg msg include in p2c msg 1-2 */
-		u32 sensor_id : 8; /*!< bit: 16..23 Sensor ID */
-		u32 rsvd : 8; /*!< bit: 24..31 Reservered for future use */
-	} s;
-};
-
-/**
- * amd_sfh_response - Stores response data from the SFH PCI device.
- * @event:	The event data
- * @debuginfo1:			Debug information from AMD_P2C_MSG1
- * @debuginfo2:			Debug information from AMD_P2C_MSG2
- * @activecontrolstatus:	Debug information from AMD_P2C_MSG3
- */
-struct amd_sfh_response {
-	union amd_sfh_event event;
-	u32 debuginfo1;
-	u32 debuginfo2;
-	u32 activecontrolstatus;
-};
-
-/**
- * struct amd_sfh_msg - A message interchanged with the PCI device.
- * @cmd:		The command to execute
- * @parm:		The command parameter
- * @dma_handle:		A DMA address to map
- * @response:		The SFH device's response
- * @pci_dev:		The PCI device that handled the message
- * @callback:		Callback to process the response
- */
-struct amd_sfh_msg {
-	union amd_sfh_cmd cmd;
-	union amd_sfh_parm parm;
-	dma_addr_t dma_handle;
-	struct amd_sfh_response response;
-	struct pci_dev *pci_dev;
-	void (*callback)(struct amd_sfh_msg *msg);
-};
-
-/**
  * struct amd_sfh_dev - AMD SFH PCI device data
  * @pci_dev:		Handled PCI device
  * @mmio:		iommapped registers
- * @lock:		Mutex to lock the device for r/w actions
  */
 struct amd_sfh_dev {
 	struct pci_dev *pci_dev;
 	void __iomem *mmio;
-	struct mutex lock;
-	struct amd_sfh_msg *msg;
 };
 
 /* SFH PCI driver interface functions */
 int amd_sfh_get_sensor_mask(struct pci_dev *pci_dev);
-int amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
-			 dma_addr_t dma_handle, unsigned int interval);
-int amd_sfh_stop_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx);
+void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
+			  dma_addr_t dma_handle, unsigned int interval);
+void amd_sfh_stop_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx);
 bool amd_sfh_pci_probed(struct pci_dev *pci_dev);
 
 #endif
