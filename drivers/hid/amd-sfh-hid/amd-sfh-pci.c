@@ -344,11 +344,11 @@ static int amd_sfh_pci_init(struct amd_sfh_dev *privdata,
 
 	rc = pcim_enable_device(pci_dev);
 	if (rc)
-		goto err_pci_enable;
+		return rc;
 
 	rc = pcim_iomap_regions(pci_dev, BIT(2), pci_name(pci_dev));
 	if (rc)
-		goto err_pci_enable;
+		return rc;
 
 	privdata->pci_dev = pci_dev;
 	privdata->mmio = pcim_iomap_table(pci_dev)[2];
@@ -357,31 +357,21 @@ static int amd_sfh_pci_init(struct amd_sfh_dev *privdata,
 	pci_set_master(pci_dev);
 
 	rc = pci_set_dma_mask(pci_dev, DMA_BIT_MASK(64));
-	if (rc) {
+	if (rc)
 		rc = pci_set_dma_mask(pci_dev, DMA_BIT_MASK(32));
-		if (rc)
-			goto clear_master;
-	}
+	if (rc)
+		return rc;
 
 	amd_sfh_reset_interrupts(privdata);
 	rc = devm_request_irq(&pci_dev->dev, pci_dev->irq, amd_sfh_irq_isr,
 			      IRQF_SHARED, pci_name(pci_dev), privdata);
-	if (rc) {
-		pci_err(pci_dev, "Failure requesting irq %i: %d\n",
-			pci_dev->irq, rc);
-		goto clear_master;
-	}
+	if (rc)
+		return rc;
 
 	pci_set_drvdata(pci_dev, privdata);
 	pci_info(pci_dev, "AMD SFH device initialized\n");
 
 	return 0;
-
-clear_master:
-	pci_clear_master(pci_dev);
-err_pci_enable:
-	pci_set_drvdata(pci_dev, NULL);
-	return rc;
 }
 
 /**
