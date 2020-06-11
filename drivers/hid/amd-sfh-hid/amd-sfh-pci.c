@@ -212,13 +212,9 @@ static int amd_sfh_pci_probe(struct pci_dev *pci_dev,
  */
 static void amd_sfh_pci_remove(struct pci_dev *pci_dev)
 {
-	int rc;
 	struct amd_sfh_dev *privdata = pci_get_drvdata(pci_dev);
 
-	rc = amd_sfh_stop_all_sensors(privdata->pci_dev);
-	if (rc)
-		pci_err(pci_dev, "Could not stop all sensors!\n");
-
+	amd_sfh_stop_all_sensors(privdata->pci_dev);
 	pci_clear_master(pci_dev);
 	amd_sfh_clear_registers(privdata);
 }
