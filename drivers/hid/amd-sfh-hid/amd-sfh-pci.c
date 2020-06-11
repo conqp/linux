@@ -113,10 +113,8 @@ EXPORT_SYMBOL_GPL(amd_sfh_pci_probed);
 /**
  * amd_sfh_stop_all_sensors- Stops all sensors on the SFH.
  * @pci_dev:	The Sensor Fusion Hub PCI device
- *
- * Return 0 on success and nonzero on errors.
  */
-static int amd_sfh_stop_all_sensors(struct pci_dev *pci_dev)
+static void amd_sfh_stop_all_sensors(struct pci_dev *pci_dev)
 {
 	struct amd_sfh_dev *privdata;
 	union amd_sfh_parm parm;
