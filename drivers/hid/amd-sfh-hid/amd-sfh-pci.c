@@ -41,9 +41,10 @@ EXPORT_SYMBOL_GPL(amd_sfh_get_sensor_mask);
 
 /**
  * amd_sfh_start_sensor- Starts the respective sensor.
- * @pci_dev:	The Sensor Fusion Hub PCI device
- * @sensor_idx:	The sensor's index
- * @dma_handle:	The DMA handle
+ * @pci_dev:	Sensor Fusion Hub PCI device
+ * @sensor_idx:	Sensor index
+ * @dma_handle:	DMA handle
+ * @interval:	Sensor poll interval
  */
 void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
 			  dma_addr_t dma_handle, unsigned int interval)
@@ -71,8 +72,8 @@ EXPORT_SYMBOL_GPL(amd_sfh_start_sensor);
 
 /**
  * amd_sfh_stop_sensor- Stops the respective sensor.
- * @pci_dev:	The Sensor Fusion Hub PCI device
- * @sensor_idx:	The sensor's index
+ * @pci_dev:	Sensor Fusion Hub PCI device
+ * @sensor_idx:	Sensors index
  */
 void amd_sfh_stop_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx)
 {
@@ -97,7 +98,7 @@ EXPORT_SYMBOL_GPL(amd_sfh_stop_sensor);
 
 /**
  * amd_sfh_pci_probed - Checks whether the PCI driver was probed successfully.
- * @pci_dev:	The Sensor Fusion Hub PCI device
+ * @pci_dev:	Sensor Fusion Hub PCI device
  */
 bool amd_sfh_pci_probed(struct pci_dev *pci_dev)
 {
@@ -112,7 +113,7 @@ EXPORT_SYMBOL_GPL(amd_sfh_pci_probed);
 
 /**
  * amd_sfh_stop_all_sensors- Stops all sensors on the SFH.
- * @pci_dev:	The Sensor Fusion Hub PCI device
+ * @pci_dev:	Sensor Fusion Hub PCI device
  */
 static void amd_sfh_stop_all_sensors(struct pci_dev *pci_dev)
 {
@@ -135,7 +136,7 @@ static void amd_sfh_stop_all_sensors(struct pci_dev *pci_dev)
 
 /**
  * amd_sfh_clear_registers - Clears the C2P and P2C registers.
- * @privdata:	The driver data
+ * @privdata:	PCI driver data
  */
 static void amd_sfh_clear_registers(struct amd_sfh_dev *privdata)
 {
@@ -152,8 +153,8 @@ static void amd_sfh_clear_registers(struct amd_sfh_dev *privdata)
 
 /**
  * amd_sfh_pci_init - Initializes the PCI device.
- * @privdata:	The PCI driver data
- * @pci_dev:	The PCI device
+ * @privdata:	PCI driver data
+ * @pci_dev:	PCI device
  *
  * Enables the PCI device, performs io mapping and sets up the IRQ handler.
  * Returns 0 on success or nonzero on errors.
@@ -190,7 +191,7 @@ static int amd_sfh_pci_init(struct amd_sfh_dev *privdata,
 /**
  * amd_sfh_pci_probe - Probes the PCI device driver.
  * @pci_dev:	The handled PCI device
- * @id:		The PCI device ID
+ * @id:		PCI device ID
  *
  * Returns 0 on success or nonzero on errors.
  */

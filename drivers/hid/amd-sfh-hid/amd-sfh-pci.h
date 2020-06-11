@@ -94,32 +94,6 @@ union amd_sfh_parm {
 };
 
 /**
- * SFH response types
- */
-enum {
-	AMD_SFH_RESP_NOOP,
-	AMD_SFH_RESP_SUCCESS,
-	AMD_SFH_RESP_FAILURE,
-	AMD_SFH_RESP_SFI_DATA_READY,
-	AMD_SFH_RESP_INVALID = 0xff,
-};
-
-/**
- * SFH status types
- */
-enum {
-	AMD_SFH_STATUS_SUCCESS,
-	AMD_SFH_STATUS_INVALID_PAYLOAD_DATA,
-	AMD_SFH_STATUS_INVALID_PAYLOAD_LENGTH,
-	AMD_SFH_STATUS_INVALID_SENSOR_ID,
-	AMD_SFH_STATUS_INVALID_DRAM_ADDR,
-	AMD_SFH_STATUS_INVALID_CMD,
-	AMD_SFH_STATUS_SENSOR_ENABLED,
-	AMD_SFH_STATUS_SENSOR_DISABLED,
-	AMD_SFH_STATUS_END,
-};
-
-/**
  * struct amd_sfh_dev - AMD SFH PCI device data
  * @pci_dev:		Handled PCI device
  * @mmio:		iommapped registers

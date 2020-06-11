@@ -263,8 +263,7 @@ static int amd_sfh_platform_probe(struct platform_device *pdev)
 	if (!privdata)
 		return -ENOMEM;
 
-	pci_dev = pci_get_device(PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_SFH,
-				 NULL);
+	pci_dev = pci_get_device(PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_SFH, NULL);
 	if (!pci_dev) {
 		dev_err(&pdev->dev, "No matching PCI device found!\n");
 		return -ENODEV;
