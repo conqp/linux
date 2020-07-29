@@ -43,7 +43,6 @@
 #include <asm/kvm_mmu.h>
 #include <asm/mmu_context.h>
 #include <asm/numa.h>
-#include <asm/pgtable.h>
 #include <asm/pgalloc.h>
 #include <asm/processor.h>
 #include <asm/smp_plat.h>
@@ -422,7 +421,7 @@ static void __init hyp_mode_check(void)
 			   "CPU: CPUs started in inconsistent modes");
 	else
 		pr_info("CPU: All CPU(s) started at EL1\n");
-	if (IS_ENABLED(CONFIG_KVM_ARM_HOST))
+	if (IS_ENABLED(CONFIG_KVM))
 		kvm_compute_layout();
 }
 

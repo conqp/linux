@@ -47,7 +47,6 @@
 #include "util/time-utils.h"
 #include "util/auxtrace.h"
 #include "util/units.h"
-#include "util/branch.h"
 #include "util/util.h" // perf_tip()
 #include "ui/ui.h"
 #include "ui/progress.h"
@@ -402,16 +401,7 @@ static int report__setup_sample_type(struct report *rep)
 		}
 	}
 
-	if (symbol_conf.use_callchain || symbol_conf.cumulate_callchain) {
-		if ((sample_type & PERF_SAMPLE_REGS_USER) &&
-		    (sample_type & PERF_SAMPLE_STACK_USER)) {
-			callchain_param.record_mode = CALLCHAIN_DWARF;
-			dwarf_callchain_users = true;
-		} else if (sample_type & PERF_SAMPLE_BRANCH_STACK)
-			callchain_param.record_mode = CALLCHAIN_LBR;
-		else
-			callchain_param.record_mode = CALLCHAIN_FP;
-	}
+	callchain_param_setup(sample_type);
 
 	if (rep->stitch_lbr && (callchain_param.record_mode != CALLCHAIN_LBR)) {
 		ui__warning("Can't find LBR callchain. Switch off --stitch-lbr.\n"
@@ -488,8 +478,7 @@ static size_t hists__fprintf_nr_sample_events(struct hists *hists, struct report
 	if (rep->time_str)
 		ret += fprintf(fp, " (time slices: %s)", rep->time_str);
 
-	if (symbol_conf.show_ref_callgraph &&
-	    strstr(evname, "call-graph=no")) {
+	if (symbol_conf.show_ref_callgraph && evname && strstr(evname, "call-graph=no")) {
 		ret += fprintf(fp, ", show reference callgraph");
 	}
 
@@ -716,8 +705,7 @@ static void report__output_resort(struct report *rep)
 	ui_progress__init(&prog, rep->nr_entries, "Sorting events for output...");
 
 	evlist__for_each_entry(rep->session->evlist, pos) {
-		perf_evsel__output_resort_cb(pos, &prog,
-					     hists__resort_cb, rep);
+		evsel__output_resort_cb(pos, &prog, hists__resort_cb, rep);
 	}
 
 	ui_progress__finish();
@@ -1090,6 +1078,26 @@ parse_percent_limit(const struct option *opt, const char *str,
 	return 0;
 }
 
+static int process_attr(struct perf_tool *tool __maybe_unused,
+			union perf_event *event,
+			struct evlist **pevlist)
+{
+	u64 sample_type;
+	int err;
+
+	err = perf_event__process_attr(tool, event, pevlist);
+	if (err)
+		return err;
+
+	/*
+	 * Check if we need to enable callchains based
+	 * on events sample_type.
+	 */
+	sample_type = perf_evlist__combined_sample_type(*pevlist);
+	callchain_param_setup(sample_type);
+	return 0;
+}
+
 int cmd_report(int argc, const char **argv)
 {
 	struct perf_session *session;
@@ -1120,7 +1128,7 @@ int cmd_report(int argc, const char **argv)
 			.fork		 = perf_event__process_fork,
 			.lost		 = perf_event__process_lost,
 			.read		 = process_read_event,
-			.attr		 = perf_event__process_attr,
+			.attr		 = process_attr,
 			.tracing_data	 = perf_event__process_tracing_data,
 			.build_id	 = perf_event__process_build_id,
 			.id_index	 = perf_event__process_id_index,
