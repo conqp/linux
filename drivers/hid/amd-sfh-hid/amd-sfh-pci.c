@@ -156,7 +156,7 @@ static void amd_sfh_clear_registers(struct amd_sfh_dev *privdata)
  * @privdata:	PCI driver data
  * @pci_dev:	PCI device
  *
- * Enables the PCI device, performs io mapping and sets up the IRQ handler.
+ * Enables the PCI device and performs I/O mapping.
  * Returns 0 on success or nonzero on errors.
  */
 static int amd_sfh_pci_init(struct amd_sfh_dev *privdata,

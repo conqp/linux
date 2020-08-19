@@ -195,8 +195,8 @@ static int amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
  *
  * Matches the sensors's masks against the sensor mask retrieved
  * from amd_sfh_plat_get_sensor_mask().
- * In case of a match, instantiates a corresponsing HID device to
- * access the respective sensor data.
+ * In case of a match, it instantiates a corresponding HID device
+ * to process the respective sensor's data.
  */
 static void amd_sfh_init_hid_devices(struct amd_sfh_plat_dev *privdata)
 {
@@ -253,6 +253,7 @@ static void remove_hid_devices(struct amd_sfh_plat_dev *privdata)
  * @pdev:	The platform device
  *
  * Initializes the client data and invokes initialization of HID devices.
+ * Returns 0 on success and nonzero on errors.
  */
 static int amd_sfh_platform_probe(struct platform_device *pdev)
 {
@@ -285,6 +286,7 @@ static int amd_sfh_platform_probe(struct platform_device *pdev)
  * @pdev:	The platform device
  *
  * Removes the HID devices and unloads the driver.
+ * Returns 0 on success and nonzero on errors.
  */
 static int amd_sfh_platform_remove(struct platform_device *pdev)
 {
