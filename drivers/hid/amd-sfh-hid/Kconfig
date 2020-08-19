@@ -9,9 +9,7 @@ config AMD_SFH_HID
 	If you say yes to this option, support will be included for the AMD
 	Sensor Fusion Hub.
 	This driver will enable sensors functionality to user through HID
-	framework. Basically this driver will get data from MP2 FW and
-	provide that data to HID framework.
-	MP2 which is an ARM® Cortex-M4 core based co-processor to x86.
+	framework.
 
 	This driver can also be built as modules. If so, the modules will
 	be called amd-sfh-pci and amd-sfh-hid.

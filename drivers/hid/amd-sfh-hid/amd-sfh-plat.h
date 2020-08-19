@@ -21,7 +21,7 @@
 
 /**
  * struct amd_sfh_plat_dev - Platform device data
- * @pci_dev:		The handled AMD MP2 SFH PCI device
+ * @pci_dev:		The handled AMD SFH PCI device
  * @accel:		The HID device of the accelerometer
  * @gyro:		The HID device of the gyroscope
  * @magno:		The HID device of the magnetometer
