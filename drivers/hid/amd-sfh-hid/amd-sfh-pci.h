@@ -18,9 +18,9 @@
  * Sensor Fusion Hub communication registers
  */
 enum {
-	/* MP2 C2P Message Registers */
-	AMD_C2P_MSG0 = 0x10500,		/* MP2 Message for I2C0 */
-	AMD_C2P_MSG1 = 0x10504,		/* MP2 Message for I2C1 */
+	/* SFH C2P Message Registers */
+	AMD_C2P_MSG0 = 0x10500,		/* SFH command register */
+	AMD_C2P_MSG1 = 0x10504,		/* SFH parameter register */
 	AMD_C2P_MSG2 = 0x10508,		/* DRAM Address Lo / Data 0 */
 	AMD_C2P_MSG3 = 0x1050c,		/* DRAM Address HI / Data 1 */
 	AMD_C2P_MSG4 = 0x10510,		/* Data 2 */
@@ -30,12 +30,12 @@ enum {
 	AMD_C2P_MSG8 = 0x10520,		/* Data 6 */
 	AMD_C2P_MSG9 = 0x10524,		/* Data 7 */
 
-	/* MP2 P2C Message Registers */
+	/* SFH P2C Message Registers */
 	AMD_P2C_MSG0 = 0x10680,		/* Do not use */
 	AMD_P2C_MSG1 = 0x10684,		/* I2C0 interrupt register */
 	AMD_P2C_MSG2 = 0x10688,		/* I2C1 interrupt register */
-	AMD_P2C_MSG3 = 0x1068C,		/* MP2 debug info */
-	AMD_P2C_MSG_INTEN = 0x10690,	/* MP2 interrupt gen register */
+	AMD_P2C_MSG3 = 0x1068C,		/* SFH sensor info */
+	AMD_P2C_MSG_INTEN = 0x10690,	/* SFH interrupt gen register */
 	AMD_P2C_MSG_INTSTS = 0x10694,	/* Interrupt status */
 };
 
