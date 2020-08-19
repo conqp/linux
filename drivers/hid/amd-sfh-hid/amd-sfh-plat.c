@@ -19,7 +19,7 @@
 #include "amd-sfh-hid-reports.h"
 #include "amd-sfh-plat.h"
 
-#define AMD_SFH_HID_VENDOR	1022
+#define AMD_SFH_HID_VENDOR	0x3fe
 #define AMD_SFH_HID_PRODUCT	0x0001
 #define AMD_SFH_HID_VERSION	0x0001
 #define AMD_SFH_PHY_DEV		"AMD Sensor Fusion Hub (PCIe)"
