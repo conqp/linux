@@ -2264,7 +2264,7 @@ static int bpf_object__init_user_btf_maps(struct bpf_object *obj, bool strict,
 		data = elf_getdata(scn, NULL);
 	if (!scn || !data) {
 		pr_warn("failed to get Elf_Data from map section %d (%s)\n",
-			obj->efile.maps_shndx, MAPS_ELF_SEC);
+			obj->efile.btf_maps_shndx, MAPS_ELF_SEC);
 		return -EINVAL;
 	}
 
@@ -5203,8 +5203,8 @@ static int bpf_object__collect_map_relos(struct bpf_object *obj,
 	int i, j, nrels, new_sz;
 	const struct btf_var_secinfo *vi = NULL;
 	const struct btf_type *sec, *var, *def;
+	struct bpf_map *map = NULL, *targ_map;
 	const struct btf_member *member;
-	struct bpf_map *map, *targ_map;
 	const char *name, *mname;
 	Elf_Data *symbols;
 	unsigned int moff;
