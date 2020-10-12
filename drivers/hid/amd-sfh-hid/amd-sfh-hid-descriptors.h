@@ -177,7 +177,7 @@ static const u8 accel3_report_descriptor[] = {
 0xC0			/* HID end collection */
 };
 
-const unsigned char gyro3_report_descriptor[] = {
+const u8 gyro3_report_descriptor[] = {
 0x05, 0x20,		/* Usage page */
 0x09, 0x76,		/* Motion type Gyro3D */
 0xA1, 0x00,		/* HID Collection (Physical) */
@@ -338,11 +338,12 @@ const unsigned char gyro3_report_descriptor[] = {
 0xC0,			/* HID end collection */
 };
 
-const unsigned char magno_report_descriptor[] = {
+const u8 magno_report_descriptor[] = {
 0x05, 0x20,		/* Usage page */
 0x09, 0x83,		/* Motion type Orientation compass 3D */
 0xA1, 0x00,		/* HID Collection (Physical) */
 
+0x85, 3,		/* HID  Report ID */
 0x05, 0x20,		/* HID usage page sensor */
 0x0A, 0x09, 0x03,	/* Sensor property and sensor connection type */
 0x15, 0,		/* HID logical MIN_8(0) */
@@ -509,13 +510,14 @@ const unsigned char magno_report_descriptor[] = {
 0xC0				/* HID end collection */
 };
 
-const unsigned char als_report_descriptor[] = {
+const u8 als_report_descriptor[] = {
 0x05, 0x20,	/* HID usage page sensor */
 0x09, 0x41,	/* HID usage sensor type Ambientlight  */
 0xA1, 0x00,	/* HID Collection (Physical) */
 
 //feature reports(xmit/receive)
-0x05, 0x20,	/* HID usage page sensor */
+0x85, 4,		/* HID  Report ID */
+0x05, 0x20,		/* HID usage page sensor */
 0x0A, 0x09, 0x03,	/* Sensor property and sensor connection type */
 0x15, 0,		/* HID logical MIN_8(0) */
 0x25, 2,		/* HID logical MAX_8(2) */
