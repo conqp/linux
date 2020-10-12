@@ -3041,7 +3041,7 @@ static int nvme_get_effects_log(struct nvme_ctrl *ctrl, u8 csi,
 	if (!cel)
 		return -ENOMEM;
 
-	ret = nvme_get_log(ctrl, NVME_NSID_ALL, NVME_LOG_CMD_EFFECTS, 0, csi,
+	ret = nvme_get_log(ctrl, 0x00, NVME_LOG_CMD_EFFECTS, 0, csi,
 			&cel->log, sizeof(cel->log), 0);
 	if (ret) {
 		kfree(cel);
@@ -3236,8 +3236,11 @@ int nvme_init_identify(struct nvme_ctrl *ctrl)
 	if (ret < 0)
 		return ret;
 
-	if (!ctrl->identified)
-		nvme_hwmon_init(ctrl);
+	if (!ctrl->identified) {
+		ret = nvme_hwmon_init(ctrl);
+		if (ret < 0)
+			return ret;
+	}
 
 	ctrl->identified = true;
 
@@ -3262,8 +3265,10 @@ static int nvme_dev_open(struct inode *inode, struct file *file)
 	}
 
 	nvme_get_ctrl(ctrl);
-	if (!try_module_get(ctrl->ops->module))
+	if (!try_module_get(ctrl->ops->module)) {
+		nvme_put_ctrl(ctrl);
 		return -EINVAL;
+	}
 
 	file->private_data = ctrl;
 	return 0;
