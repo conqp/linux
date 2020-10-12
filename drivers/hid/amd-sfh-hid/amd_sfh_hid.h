@@ -10,9 +10,8 @@
 #define AMDSFH_HID_H
 
 #define MAX_HID_DEVICES		4
-#define DCD_DATA_SIZE_CHAR	512
 #define BUS_AMD_AMDTP		0x20
-#define AMD_SFH_HID_VENDOR	1022
+#define AMD_SFH_HID_VENDOR	0x1022
 #define AMD_SFH_HID_PRODUCT	0x0001
 
 struct amdtp_cl_data {
@@ -49,7 +48,7 @@ struct amdtp_cl_data {
  * @cli_data:		Link to the client instance
  * @hid_wait:		Completion waitq
  *
- * Used to tie hid hid->driver data to driver client instance
+ * Used to tie hid->driver data to driver client instance
  */
 struct amdtp_hid_data {
 	int index;

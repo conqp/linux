@@ -11,12 +11,13 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/workqueue.h>
-#include <uapi/asm-generic/errno-base.h>
-#include "hid_descriptor/amd_sfh_hid_descriptor.h"
-#include "amdsfh_hid.h"
-#include "amd_mp2_pcie.h"
+#include <linux/errno.h>
 
-#define PERIOD  200
+#include "hid_descriptor/amd_sfh_hid_desc.h"
+#include "amd_sfh_pcie.h"
+#include "amd_sfh_hid.h"
+
+#define AMD_SFH_IDLE_LOOP	200
 
 struct request_list {
 	struct hid_device *hid;
@@ -57,6 +58,7 @@ int amd_sfh_get_report(struct hid_device *hid, int report_id, int report_type)
 
 			if (!new)
 				return -ENOMEM;
+
 			new->current_index = i;
 			new->sensor_idx = cli_data->sensor_idx[i];
 			new->hid = hid;
@@ -126,7 +128,7 @@ static void amd_sfh_work_buffer(struct work_struct *work)
 		hid_input_report(cli_data->hid_sensor_hubs[i], HID_INPUT_REPORT,
 				 cli_data->input_report[i], report_size, 0);
 	}
-	schedule_delayed_work(&cli_data->work_buffer, PERIOD);
+	schedule_delayed_work(&cli_data->work_buffer, msecs_to_jiffies(AMD_SFH_IDLE_LOOP));
 }
 
 int amd_sfh_hid_client_init(struct amd_mp2_dev *privdata)
@@ -183,7 +185,7 @@ int amd_sfh_hid_client_init(struct amd_mp2_dev *privdata)
 			rc = -ENOMEM;
 			goto cleanup;
 		}
-		info.period = PERIOD;
+		info.period = msecs_to_jiffies(AMD_SFH_IDLE_LOOP);
 		info.sensor_idx = cl_idx;
 		info.phys_address = cl_data->sensor_phys_addr[i];
 
@@ -202,7 +204,7 @@ int amd_sfh_hid_client_init(struct amd_mp2_dev *privdata)
 		cl_data->sensor_sts[i] = 1;
 	}
 	privdata->cl_data = cl_data;
-	schedule_delayed_work(&cl_data->work_buffer, PERIOD);
+	schedule_delayed_work(&cl_data->work_buffer, msecs_to_jiffies(AMD_SFH_IDLE_LOOP));
 	return 0;
 
 cleanup:

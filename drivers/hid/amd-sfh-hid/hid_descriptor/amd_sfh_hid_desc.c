@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *  AMD SFH Report Descriptor generator logic
+ *  AMD SFH Report Descriptor generator
  *  Copyright 2020 Advanced Micro Devices, Inc.
  *  Authors: Nehal Bakulchandra Shah <Nehal-Bakulchandra.Shah@amd.com>
  *	     Sandeep Singh <sandeep.singh@amd.com>
@@ -9,9 +9,9 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/slab.h>
-#include "amd_sfh_hid_descriptor.h"
-#include "amd_sfh_hid_report_descriptor.h"
-#include "amd_mp2_pcie.h"
+#include "amd_sfh_pcie.h"
+#include "amd_sfh_hid_desc.h"
+#include "amd_sfh_hid_report_desc.h"
 
 #define	AMD_SFH_FW_MULTIPLIER (1000)
 #define HID_USAGE_SENSOR_PROP_REPORTING_STATE_ALL_EVENTS_ENUM	0x41
@@ -211,14 +211,12 @@ u8 get_input_report(int sensor_idx, int report_id, u8 *input_report, u32 *sensor
 		memcpy(input_report, &magno_input, sizeof(magno_input));
 		report_size = sizeof(magno_input);
 		break;
-
 	case als_idx: /* Als */
 		get_common_inputs(&als_input.common_property, report_id);
 		als_input.illuminance_value =  (int)sensor_virt_addr[0] / AMD_SFH_FW_MULTIPLIER;
 		report_size = sizeof(als_input);
 		memcpy(input_report, &als_input, sizeof(als_input));
 		break;
-
 	default:
 		break;
 	}

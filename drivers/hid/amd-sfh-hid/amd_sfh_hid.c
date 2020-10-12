@@ -8,11 +8,12 @@
 #include <linux/hid.h>
 #include <linux/wait.h>
 #include <linux/sched.h>
-#include "amdsfh_hid.h"
 
-#define DRIVER_NAME "AMD_MP2_SENSORS_TRANSPORT"
+#include "amd_sfh_hid.h"
 
-/*
+#define AMD_SFH_RESPONSE_TIMEOUT	1500
+
+/**
  * amdtp_hid_parse() - hid-core .parse() callback
  * @hid:	hid device instance
  *
@@ -62,7 +63,7 @@ static void amdtp_hid_request(struct hid_device *hid, struct hid_report *rep, in
 	case HID_REQ_GET_REPORT:
 		rc = amd_sfh_get_report(hid, rep->id, rep->type);
 		if (rc)
-			pr_err("AMDSFH  get report error ");
+			dev_err(&hid->dev, "AMDSFH  get report error\n");
 		break;
 	case HID_REQ_SET_REPORT:
 		amd_sfh_set_report(hid, rep->id, reqtype);
@@ -85,13 +86,14 @@ static int amdtp_wait_for_response(struct hid_device *hid)
 
 	if (!cli_data->request_done[i])
 		ret = wait_event_interruptible_timeout(hid_data->hid_wait,
-						       cli_data->request_done[i], 1500);
-	if (ret > 0)
-		return 0;
+						       cli_data->request_done[i],
+						       msecs_to_jiffies(AMD_SFH_RESPONSE_TIMEOUT));
+	if (ret < 0)
+		return -ETIMEDOUT;
 	else if (ret == -ERESTARTSYS)
 		return -ERESTARTSYS;
 	else
-		return -ETIMEDOUT;
+		return 0;
 }
 
 void amdtp_hid_wakeup(struct hid_device *hid)
@@ -114,18 +116,15 @@ static struct hid_ll_driver amdtp_hid_ll_driver = {
 	.raw_request  =	amdtp_raw_request,
 };
 
-int amdtp_hid_probe(u32 cur_hid_dev,
-		    struct amdtp_cl_data *cli_data)
+int amdtp_hid_probe(u32 cur_hid_dev, struct amdtp_cl_data *cli_data)
 {
 	struct hid_device *hid;
 	struct amdtp_hid_data *hid_data;
 	int rc;
 
 	hid = hid_allocate_device();
-	if (IS_ERR(hid)) {
-		rc = PTR_ERR(hid);
-		return rc;
-	}
+	if (IS_ERR(hid))
+		return PTR_ERR(hid);
 
 	hid_data = kzalloc(sizeof(*hid_data), GFP_KERNEL);
 	if (!hid_data) {

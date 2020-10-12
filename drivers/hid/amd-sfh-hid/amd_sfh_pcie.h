@@ -10,9 +10,12 @@
 #define PCIE_MP2_AMD_H
 
 #include <linux/pci.h>
-#include <linux/types.h>
 
 #define PCI_DEVICE_ID_AMD_MP2	0x15E4
+
+#define ENABLE_SENSOR		1
+#define DISABLE_SENSOR		2
+#define STOP_ALL_SENSORS	8
 
 /* MP2 C2P Message Registers */
 #define AMD_C2P_MSG0	0x10500
@@ -45,13 +48,6 @@ struct sfh_cmd_reg {
 	union sfh_cmd_base cmd_base;
 	union sfh_cmd_param cmd_param;
 	phys_addr_t phys_addr;
-};
-
-enum command_id {
-	enable_sensor = 1,
-	disable_sensor = 2,
-	stop_all_sensors = 8,
-	invalid_cmd = 0xf
 };
 
 enum sensor_idx {

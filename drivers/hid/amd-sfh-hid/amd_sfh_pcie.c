@@ -13,19 +13,17 @@
 #include <linux/interrupt.h>
 #include <linux/io-64-nonatomic-lo-hi.h>
 #include <linux/module.h>
-#include <linux/pci.h>
 #include <linux/slab.h>
-#include <linux/delay.h>
-#include <linux/types.h>
-#include "amd_mp2_pcie.h"
+
+#include "amd_sfh_pcie.h"
 
 #define DRIVER_NAME	"pcie_mp2_amd"
 #define DRIVER_DESC	"AMD(R) PCIe MP2 Communication Driver"
 
-#define ACEL_EN		BIT(accel_idx)
-#define GYRO_EN		BIT(gyro_idx)
-#define MAGNO_EN	BIT(mag_idx)
-#define ALS_EN		BIT(als_idx)
+#define ACEL_EN		BIT(1)
+#define GYRO_EN		BIT(2)
+#define MAGNO_EN	BIT(3)
+#define ALS_EN		BIT(19)
 
 void amd_start_sensor(struct amd_mp2_dev *privdata, struct amd_mp2_sensor_info info)
 {
@@ -33,13 +31,13 @@ void amd_start_sensor(struct amd_mp2_dev *privdata, struct amd_mp2_sensor_info i
 	union sfh_cmd_base cmd_base;
 
 	/* fill up command register */
-	cmd_base.ul = 0;
-	cmd_base.s.cmd_id = enable_sensor;
+	memset(&cmd_base, 0, sizeof(cmd_base));
+	cmd_base.s.cmd_id = ENABLE_SENSOR;
 	cmd_base.s.period = info.period;
 	cmd_base.s.sensor_id = info.sensor_idx;
 
 	/* fill up command param register */
-	cmd_param.ul = 0;
+	memset(&cmd_param, 0, sizeof(cmd_param));
 	cmd_param.s.buf_layout = 1;
 	cmd_param.s.buf_length = 16;
 
@@ -53,8 +51,8 @@ void amd_stop_sensor(struct amd_mp2_dev *privdata, u16 sensor_idx)
 	union sfh_cmd_base cmd_base;
 
 	/* fill up command register */
-	cmd_base.ul = 0;
-	cmd_base.s.cmd_id = disable_sensor;
+	memset(&cmd_base, 0, sizeof(cmd_base));
+	cmd_base.s.cmd_id = DISABLE_SENSOR;
 	cmd_base.s.period = 0;
 	cmd_base.s.sensor_id = sensor_idx;
 
@@ -67,8 +65,8 @@ void amd_stop_all_sensors(struct amd_mp2_dev *privdata)
 	union sfh_cmd_base cmd_base;
 
 	/* fill up command register */
-	cmd_base.ul = 0;
-	cmd_base.s.cmd_id = stop_all_sensors;
+	memset(&cmd_base, 0, sizeof(cmd_base));
+	cmd_base.s.cmd_id = STOP_ALL_SENSORS;
 	cmd_base.s.period = 0;
 	cmd_base.s.sensor_id = 0;
 
@@ -78,9 +76,6 @@ void amd_stop_all_sensors(struct amd_mp2_dev *privdata)
 int amd_mp2_get_sensor_num(struct amd_mp2_dev *privdata, u8 *sensor_id)
 {
 	int activestatus, num_of_sensors = 0;
-
-	if (!sensor_id)
-		return -EINVAL;
 
 	privdata->activecontrolstatus = readl(privdata->mmio + AMD_P2C_MSG3);
 	activestatus = privdata->activecontrolstatus >> 4;
@@ -99,23 +94,10 @@ int amd_mp2_get_sensor_num(struct amd_mp2_dev *privdata, u8 *sensor_id)
 	return num_of_sensors;
 }
 
-static int amd_mp2_pci_init(struct amd_mp2_dev *privdata, struct pci_dev *pdev)
+static void amd_mp2_pci_remove(void *privdata)
 {
-	int rc;
-
-	pci_set_drvdata(pdev, privdata);
-	rc = pcim_enable_device(pdev);
-	if (rc)
-		return rc;
-	pcim_iomap_regions(pdev, BIT(2), DRIVER_NAME);
-
-	privdata->mmio = pcim_iomap_table(pdev)[2];
-	pci_set_master(pdev);
-
-	rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
-	if (rc)
-		rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
-	return rc;
+	amd_sfh_hid_client_deinit(privdata);
+	amd_stop_all_sensors(privdata);
 }
 
 static int amd_mp2_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
@@ -126,27 +108,34 @@ static int amd_mp2_pci_probe(struct pci_dev *pdev, const struct pci_device_id *i
 	privdata = devm_kzalloc(&pdev->dev, sizeof(*privdata), GFP_KERNEL);
 	if (!privdata)
 		return -ENOMEM;
+
 	privdata->pdev = pdev;
-	rc = amd_mp2_pci_init(privdata, pdev);
+	pci_set_drvdata(pdev, privdata);
+	rc = pcim_enable_device(pdev);
 	if (rc)
 		return rc;
-	rc = amd_sfh_hid_client_init(privdata);
+
+	rc = pcim_iomap_regions(pdev, BIT(2), DRIVER_NAME);
 	if (rc)
 		return rc;
-	return 0;
-}
 
-static void amd_mp2_pci_remove(struct pci_dev *pdev)
-{
-	struct amd_mp2_dev *privdata = pci_get_drvdata(pdev);
+	privdata->mmio = pcim_iomap_table(pdev)[2];
+	pci_set_master(pdev);
+	rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+	if (rc) {
+		rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+		return rc;
+	}
+	rc = devm_add_action_or_reset(&pdev->dev, amd_mp2_pci_remove, privdata);
+	if (rc)
+		return rc;
 
-	amd_sfh_hid_client_deinit(privdata);
-	amd_stop_all_sensors(privdata);
+	return amd_sfh_hid_client_init(privdata);
 }
 
 static const struct pci_device_id amd_mp2_pci_tbl[] = {
 	{ PCI_VDEVICE(AMD, PCI_DEVICE_ID_AMD_MP2) },
-	{},
+	{ }
 };
 MODULE_DEVICE_TABLE(pci, amd_mp2_pci_tbl);
 
@@ -154,7 +143,6 @@ static struct pci_driver amd_mp2_pci_driver = {
 	.name		= DRIVER_NAME,
 	.id_table	= amd_mp2_pci_tbl,
 	.probe		= amd_mp2_pci_probe,
-	.remove		= amd_mp2_pci_remove,
 };
 module_pci_driver(amd_mp2_pci_driver);
 
