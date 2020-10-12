@@ -343,6 +343,7 @@ const u8 magno_report_descriptor[] = {
 0x09, 0x83,		/* Motion type Orientation compass 3D */
 0xA1, 0x00,		/* HID Collection (Physical) */
 
+0x85, 3,		/* HID  Report ID */
 0x05, 0x20,		/* HID usage page sensor */
 0x0A, 0x09, 0x03,	/* Sensor property and sensor connection type */
 0x15, 0,		/* HID logical MIN_8(0) */
@@ -515,7 +516,8 @@ const u8 als_report_descriptor[] = {
 0xA1, 0x00,	/* HID Collection (Physical) */
 
 //feature reports(xmit/receive)
-0x05, 0x20,	/* HID usage page sensor */
+0x85, 4,		/* HID  Report ID */
+0x05, 0x20,		/* HID usage page sensor */
 0x0A, 0x09, 0x03,	/* Sensor property and sensor connection type */
 0x15, 0,		/* HID logical MIN_8(0) */
 0x25, 2,		/* HID logical MAX_8(2) */
