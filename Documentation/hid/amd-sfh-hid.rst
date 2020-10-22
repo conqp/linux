@@ -127,7 +127,7 @@ The available sensors are currently:
 | ambient light sensor |  BIT(19) |
 +----------------------+----------+
 
-To enable e.g. the accelerometer:
+To enable e.g. only the accelerometer:
 
     $ cat /etc/modprobe.d/amd_sfh.conf
     options amd_sfh_hid sensor_mask=1
