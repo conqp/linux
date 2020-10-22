@@ -108,3 +108,26 @@ Data flow table
                            | Provide reports as requested |
                            | by hid-code.                 |
                            +------------------------------+
+
+Quirks
+------
+On some systems, the sensor hub has not been programmed with information about
+the sensors active on the device. This results in no sensors bein activated and
+no HID devices being spawned by the driver. To manually active the respective
+sensors, you can load the module `amd-sfh-hid` with the kernel parameter
+`sensor_mask=<int>`.
+The available sensors are currently:
+
++----------------------+----------+
+|        sensor        |   mask   |
++======================+==========+
+| accelerometer        |  BIT(0)  |
+| gyroscope            |  BIT(1)  |
+| magnetometer         |  BIT(2)  |
+| ambient light sensor |  BIT(19) |
++----------------------+----------+
+
+To enable e.g. the accelerometer:
+
+    $ cat /etc/modprobe.d/amd_sfh.conf
+    options amd_sfh_hid sensor_mask=1
