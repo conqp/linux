@@ -1,145 +1,132 @@
-.. SPDX-License-Identifier: GPL-2.0
+========================================
+Kernel drivers: amd-sfh-pci, amd-sfh-hid
+========================================
 
+Supported adapters:
+  * AMD Sensor Fusion Hub PCIe interface
 
-AMD Sensor Fusion Hub
-=====================
-AMD Sensor Fusion Hub (SFH) is part of an SOC starting from Ryzen based platforms.
-The solution is working well on several OEM products. AMD SFH uses HID over PCIe bus.
-In terms of architecture it resembles ISH, however the major difference is all
-the HID reports are generated as part of the kernel driver.
+Datasheet: not publicly available.
 
-1. Block Diagram
-================
+Authors:
+        - Shyam Sundar S K <Shyam-sundar.S-k@amd.com>
+        - Nehal Bakulchandra Shah <Nehal-bakulchandra.Shah@amd.com>
+        - Sandeep Singh <sandeep.singh@amd.com>
+        - Richard Neumann <mail@richard-neumann.de>
 
-::
+Description
+===========
+The AMD Sensor Fushion Hub (SFH) is part of a SOC on Ryzen-based platforms.
+The SFH uses HID over PCIe bus. In terms of architecture it is much more
+resmebles like ISH. However the major difference is, that currently HID reports
+are being generated within the kernel driver.
 
-	---------------------------------
-	|  HID User Space Applications  |
-	- -------------------------------
+Block Diagram
+-------------
+.. code-block:: none
 
-    ---------------------------------------------
-	 ---------------------------------
-	|		HID Core          |
-	 ---------------------------------
+    +-------------------------------+
+    |  HID User Space Applications  |
+    +-------------------------------+
+    =================================
+    +-------------------------------+
+    |      HID low-level driver     |
+    |   with HID report generator   |
+    +-------------------------------+
 
-	 ---------------------------------
-	|     AMD HID Transport           |
-	 ---------------------------------
+    +-------------------------------+
+    |      HID platform driver      |
+    +-------------------------------+
 
-	 --------------------------------
-	|             AMD HID Client     |
-	|	with HID Report Generator|
-	 --------------------------------
+    +-------------------------------+
+    |      AMD SFH PCIe driver      |
+    +-------------------------------+
+    =================================
+    +-------------------------------+
+    |       SFH MP2 Processor       |
+    +-------------------------------+
 
-	 --------------------------------
-	|     AMD MP2 PCIe Driver        |
-	 --------------------------------
-    OS
-    ---------------------------------------------
-    Hardware + Firmware
-         --------------------------------
-         |     SFH MP2 Processor         |
-         --------------------------------
-
-
-AMD HID Transport Layer
------------------------
-AMD SFH transport is also implemented as a bus. Each client application executing in the AMD MP2 is
-registered as a device on this bus. Here: MP2 which is an ARM core connected to x86 for processing
-sensor data. The layer, which binds each device (AMD SFH HID driver) identifies the device type and
-registers with the hid core. Transport layer attach a constant "struct hid_ll_driver" object with
-each device. Once a device is registered with HID core, the callbacks provided via this struct are
-used by HID core to communicate with the device. AMD HID Transport layer implements the synchronous calls.
-
-AMD HID Client Layer
+HID low-level driver
 --------------------
-This layer is responsible to implement HID request and descriptors. As firmware is OS agnostic, HID
-client layer fills the HID request structure and descriptors. HID client layer is complex as it is
-interface between MP2 PCIe layer and HID. HID client layer initialized the MP2 PCIe layer and holds
-the instance of MP2 layer. It identifies the number of sensors connected using MP2-PCIe layer. Base
-on that allocates the DRAM address for each and every sensor and pass it to MP2-PCIe driver.On
-enumeration of each the sensor, client layer fills the HID Descriptor structure and HID input repor
-structure. HID Feature report structure is optional. The report descriptor structure varies from
-sensor to sensor.
+The driver is conceived in a multi-layer architecture.
+The level closest to the applications is the HID low-level (LL) driver,
+which implements the functions defined by the hid-core API to manage the
+respective HID devices and process reports.
+Therefor, the HID-LL-driver starts and stops the sensors as needed by invoking
+the exposed functions from the PCI driver (see below) and creates DMA mappings
+to access the DRAM of the PCI device to retrieve feature and input reports
+from it.
 
-AMD MP2 PCIe layer
-------------------
-MP2 PCIe Layer is responsible for making all transactions with the firmware over PCIe.
-The connection establishment between firmware and PCIe happens here.
+HID platform driver (`amd-sfh-hid`)
+-----------------------------------
+The aforementioned HID devices are being managed, i.e. created on probing and
+destroyed on removing, by the platform driver. It is being loaded through ACPI
+table matching if the PCI driver was loaded successfully.
+It determines the HID devices to be created on startup using the connected
+sensors bitmask retrieved by invoking the respective function of the PCI driver.
+On some systems the firmware does not provide the information about sensors
+connected to the SFH device. In this case, the detected sensors can be manually
+overridden by setting the driver's module parameter `sensor_mask=<int>`.
 
-The communication between X86 and MP2 is split into three parts.
-1. Command transfer via the C2P mailbox registers.
-2. Data transfer via DRAM.
-3. Supported sensor info via P2C registers.
+PCI device driver (`amd-sfh-pci`)
+---------------------------------
+The PCI driver is responsible for making all transaction with the chip's
+firmware over PCI-e.
+The sensors are being started and stopped respectively by writing commands
+and, where applicable, DRAM addresses to certain device registers.
+The sensor's input report data can then be accessed by accessing the DRAM
+through DMA-mapped virtual addresses. Commands are sent to the device using C2P
+mail box registers. These C2P registers are mapped in PCIe address space.
+Writing into the device message registers generates interrupts. The device's
+firmware uses DRAM interface registers to indirectly access DRAM memory. It is
+recommended to always write a minimum of 32 bytes into the DRAM.
 
-Commands are sent to MP2 using C2P Mailbox registers. Writing into C2P Message registers generate
-interrupt to MP2. The client layer allocates the physical memory and the same is sent to MP2 via
-the PCI layer. MP2 firmware writes the command output to the access DRAM memory which the client
-layer has allocated. Firmware always writes minimum of 32 bytes into DRAM. So as a protocol driver
-shall allocate minimum of 32 bytes DRAM space.
+Driver loading
+--------------
 
-Enumeration and Probing flow
-----------------------------
-::
++------------+-----------------+----------------------+
+| PCI driver | Platform driver | HID low-level driver |
++============+=================+======================+
+| Loaded at boot time if       | Used by spawned HIDs |
+| device is present.           |                      |
++------------------------------+----------------------+
 
-       HID             AMD            AMD                       AMD -PCIe             MP2
-       Core         Transport      Client layer                   layer                FW
-        |		|	       |                           |                 |
-        |		|              |                 on Boot Driver Loaded       |
-        |		|	       |                           |                 |
-        |		|	       |                        MP2-PCIe Int         |
-        |		|              |			   |                 |
-        |		|	       |---Get Number of sensors-> |                 |
-        |		|              |                       Read P2C              |
-        |		|	       |			Register             |
-        |		|              |                           |                 |
-        |               |              | Loop(for No of Sensors)   |                 |
-        |		|	       |----------------------|    |                 |
-        |		|              | Create HID Descriptor|    |                 |
-        |		|	       | Create Input  report |    |                 |
-        |		|              |  Descriptor Map      |    |                 |
-        |		|	       |  the MP2 FW Index to |    |                 |
-        |		|              |   HID Index          |    |                 |
-        |		|	       | Allocate the DRAM    |  Enable              |
-        |		|	       |	address       |  Sensors             |
-        |		|              |----------------------|    |                 |
-        |		| HID transport|                           |    Enable       |
-        |	        |<--Probe------|                           |---Sensor CMD--> |
-        |		| Create the   |			   |                 |
-        |		| HID device   |                           |                 |
-        |               |    (MFD)     |                           |                 |
-        |		| by Populating|			   |                 |
-        |               |  the HID     |                           |                 |
-        |               |  ll_driver   |                           |                 |
-        | HID           |	       |			   |                 |
-        |  add          |              |                           |                 |
-        |Device         |              |                           |                 |
-        |<------------- |	       |			   |                 |
+Data flow table
+---------------
+.. code-block:: none
 
+                                                 +===============================================+
+    +============+        Get sensor mask        |                Platform driver                |
+    | PCI driver | <---------------------------- +===============================================+
+    +============+    of available HID devices   | * Probe HID devices according to sensor mask. |
+          ^                                      | * Start periodical polling from DRAM.         |
+          |                                      +-----------------------------------------------+
+ Start / stop sensor on                                                 |
+ respective HID requsts.                                                |
+          |                +==============================+             |
+          |                |        HID ll-driver         |             |
+          +--------------- +==============================+ <-----------+
+                           | Provide reports as requested |
+                           | by hid-code.                 |
+                           +------------------------------+
 
-Data Flow from Application to the AMD SFH Driver
-------------------------------------------------
+Quirks
+------
+On some systems, the sensor hub has not been programmed with information about
+the sensors active on the device. This results in no sensors bein activated and
+no HID devices being spawned by the driver. To manually active the respective
+sensors, you can load the module `amd-sfh-hid` with the kernel parameter
+`sensor_mask=<int>`. The available sensors are currently:
 
-::
++----------------------+----------+
+|        sensor        |   mask   |
++======================+==========+
+| accelerometer        |  BIT(0)  |
+| gyroscope            |  BIT(1)  |
+| magnetometer         |  BIT(2)  |
+| ambient light sensor |  BIT(19) |
++----------------------+----------+
 
-	        |	       |              |	  	 	          |		    |
-                |	       |	      |			          |                 |
-                |	       |	      |			          |                 |
-                |              |              |                           |                 |
-                |              |              |                           |                 |
-                |HID_req       |              |                           |                 |
-                |get_report    |              |                           |                 |
-                |------------->|              |                           |                 |
-	        |              | HID_get_input|                           |                 |
-	        |              |  report      |                           |                 |
-	        |              |------------->|------------------------|  |                 |
-	        |              |              |  Read the DRAM data for|  |                 |
-	        |              |              |  requested sensor and  |  |                 |
-	        |              |              |  create the HID input  |  |                 |
-	        |              |              |  report                |  |                 |
-	        |              |              |------------------------|  |                 |
-	        |              |Data received |                           |                 |
-	        |              | in HID report|                           |                 |
-    To	        |<-------------|<-------------|                           |                 |
-    Applications|              |              |                           |                 |
-        <-------|              |              |                           |                 |
+To enable e.g. only the accelerometer:
+
+    $ cat /etc/modprobe.d/amd_sfh.conf
+    options amd_sfh_hid sensor_mask=1
