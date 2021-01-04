@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/*
+/*  SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+ *
  *  AMD Sensor Fusion Hub HID platform driver
  *
  *  Authors: Nehal Bakulchandra Shah <Nehal-Bakulchandra.Shah@amd.com>
@@ -138,11 +138,11 @@ static struct hid_device *amd_sfh_hid_probe(struct pci_dev *pci_dev,
 
 	name = amd_sfh_get_sensor_name(sensor_idx);
 
-	rc = strlcpy(hid->name, name, sizeof(hid->name));
+	rc = strscpy(hid->name, name, sizeof(hid->name));
 	if (rc >= sizeof(hid->name))
 		hid_warn(hid, "Could not set HID device name.\n");
 
-	rc = strlcpy(hid->phys, AMD_SFH_PHY_DEV, sizeof(hid->phys));
+	rc = strscpy(hid->phys, AMD_SFH_PHY_DEV, sizeof(hid->phys));
 	if (rc >= sizeof(hid->phys))
 		hid_warn(hid, "Could not set HID device location.\n");
 

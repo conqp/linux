@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/*
+/*  SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+ *
  *  AMD Sensor Fusion Hub PCIe driver interface
  *
  *  Authors: Nehal Bakulchandra Shah <Nehal-Bakulchandra.Shah@amd.com>
