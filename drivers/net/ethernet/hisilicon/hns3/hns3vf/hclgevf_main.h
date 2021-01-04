@@ -139,6 +139,7 @@ enum hclgevf_states {
 	HCLGEVF_STATE_IRQ_INITED,
 	HCLGEVF_STATE_REMOVING,
 	HCLGEVF_STATE_NIC_REGISTERED,
+	HCLGEVF_STATE_ROCE_REGISTERED,
 	/* task states */
 	HCLGEVF_STATE_RST_SERVICE_SCHED,
 	HCLGEVF_STATE_RST_HANDLING,
@@ -163,6 +164,7 @@ struct hclgevf_mac {
 
 struct hclgevf_hw {
 	void __iomem *io_base;
+	void __iomem *mem_base;
 	int num_vec;
 	struct hclgevf_cmq cmq;
 	struct hclgevf_mac mac;

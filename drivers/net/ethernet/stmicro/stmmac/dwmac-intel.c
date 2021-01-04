@@ -6,6 +6,7 @@
 #include <linux/pci.h>
 #include <linux/dmi.h>
 #include "dwmac-intel.h"
+#include "dwmac4.h"
 #include "stmmac.h"
 
 struct intel_priv_data {
@@ -235,6 +236,7 @@ static int intel_mgbe_common_data(struct pci_dev *pdev,
 	int ret;
 	int i;
 
+	plat->phy_addr = -1;
 	plat->clk_csr = 5;
 	plat->has_gmac = 0;
 	plat->has_gmac4 = 1;
@@ -295,6 +297,7 @@ static int intel_mgbe_common_data(struct pci_dev *pdev,
 	plat->axi->axi_blen[2] = 16;
 
 	plat->ptp_max_adj = plat->clk_ptp_rate;
+	plat->eee_usecs_rate = plat->clk_ptp_rate;
 
 	/* Set system clock */
 	plat->stmmac_clk = clk_register_fixed_rate(&pdev->dev,
@@ -321,6 +324,11 @@ static int intel_mgbe_common_data(struct pci_dev *pdev,
 	/* Set the maxmtu to a default of JUMBO_LEN */
 	plat->maxmtu = JUMBO_LEN;
 
+	plat->vlan_fail_q_en = true;
+
+	/* Use the last Rx queue */
+	plat->vlan_fail_q = plat->rx_queues_to_use - 1;
+
 	return 0;
 }
 
@@ -338,7 +346,6 @@ static int ehl_sgmii_data(struct pci_dev *pdev,
 			  struct plat_stmmacenet_data *plat)
 {
 	plat->bus_id = 1;
-	plat->phy_addr = 0;
 	plat->phy_interface = PHY_INTERFACE_MODE_SGMII;
 
 	plat->serdes_powerup = intel_serdes_powerup;
@@ -355,7 +362,6 @@ static int ehl_rgmii_data(struct pci_dev *pdev,
 			  struct plat_stmmacenet_data *plat)
 {
 	plat->bus_id = 1;
-	plat->phy_addr = 0;
 	plat->phy_interface = PHY_INTERFACE_MODE_RGMII;
 
 	return ehl_common_data(pdev, plat);
@@ -369,7 +375,6 @@ static int ehl_pse0_common_data(struct pci_dev *pdev,
 				struct plat_stmmacenet_data *plat)
 {
 	plat->bus_id = 2;
-	plat->phy_addr = 1;
 	return ehl_common_data(pdev, plat);
 }
 
@@ -401,7 +406,6 @@ static int ehl_pse1_common_data(struct pci_dev *pdev,
 				struct plat_stmmacenet_data *plat)
 {
 	plat->bus_id = 3;
-	plat->phy_addr = 1;
 	return ehl_common_data(pdev, plat);
 }
 
@@ -443,7 +447,6 @@ static int tgl_sgmii_data(struct pci_dev *pdev,
 			  struct plat_stmmacenet_data *plat)
 {
 	plat->bus_id = 1;
-	plat->phy_addr = 0;
 	plat->phy_interface = PHY_INTERFACE_MODE_SGMII;
 	plat->serdes_powerup = intel_serdes_powerup;
 	plat->serdes_powerdown = intel_serdes_powerdown;
@@ -626,6 +629,13 @@ static int intel_eth_pci_probe(struct pci_dev *pdev,
 	res.addr = pcim_iomap_table(pdev)[0];
 	res.wol_irq = pci_irq_vector(pdev, 0);
 	res.irq = pci_irq_vector(pdev, 0);
+
+	if (plat->eee_usecs_rate > 0) {
+		u32 tx_lpi_usec;
+
+		tx_lpi_usec = (plat->eee_usecs_rate / 1000000) - 1;
+		writel(tx_lpi_usec, res.addr + GMAC_1US_TIC_COUNTER);
+	}
 
 	ret = stmmac_dvr_probe(&pdev->dev, plat, &res);
 	if (ret) {

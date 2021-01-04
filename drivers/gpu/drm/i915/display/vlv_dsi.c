@@ -985,6 +985,13 @@ static void intel_dsi_post_disable(struct intel_atomic_state *state,
 	intel_dsi_msleep(intel_dsi, intel_dsi->panel_pwr_cycle_delay);
 }
 
+static void intel_dsi_shutdown(struct intel_encoder *encoder)
+{
+	struct intel_dsi *intel_dsi = enc_to_intel_dsi(encoder);
+
+	intel_dsi_msleep(intel_dsi, intel_dsi->panel_pwr_cycle_delay);
+}
+
 static bool intel_dsi_get_hw_state(struct intel_encoder *encoder,
 				   enum pipe *pipe)
 {
@@ -1585,6 +1592,7 @@ static const struct drm_connector_helper_funcs intel_dsi_connector_helper_funcs 
 };
 
 static const struct drm_connector_funcs intel_dsi_connector_funcs = {
+	.detect = intel_panel_detect,
 	.late_register = intel_connector_register,
 	.early_unregister = intel_connector_unregister,
 	.destroy = intel_connector_destroy,
@@ -1842,6 +1850,7 @@ void vlv_dsi_init(struct drm_i915_private *dev_priv)
 	intel_encoder->get_hw_state = intel_dsi_get_hw_state;
 	intel_encoder->get_config = intel_dsi_get_config;
 	intel_encoder->update_pipe = intel_panel_update_backlight;
+	intel_encoder->shutdown = intel_dsi_shutdown;
 
 	intel_connector->get_hw_state = intel_connector_get_hw_state;
 

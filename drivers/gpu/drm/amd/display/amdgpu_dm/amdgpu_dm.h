@@ -86,7 +86,7 @@ struct irq_list_head {
  * @bo_ptr: Pointer to the buffer object
  * @gpu_addr: MMIO gpu addr
  */
-struct dm_comressor_info {
+struct dm_compressor_info {
 	void *cpu_addr;
 	struct amdgpu_bo *bo_ptr;
 	uint64_t gpu_addr;
@@ -148,7 +148,9 @@ struct amdgpu_dm_backlight_caps {
  * @soc_bounding_box: SOC bounding box values provided by gpu_info FW
  * @cached_state: Caches device atomic state for suspend/resume
  * @cached_dc_state: Cached state of content streams
- * @compressor: Frame buffer compression buffer. See &struct dm_comressor_info
+ * @compressor: Frame buffer compression buffer. See &struct dm_compressor_info
+ * @force_timing_sync: set via debugfs. When set, indicates that all connected
+ *		       displays will be forced to synchronize.
  */
 struct amdgpu_display_manager {
 
@@ -322,7 +324,7 @@ struct amdgpu_display_manager {
 	struct drm_atomic_state *cached_state;
 	struct dc_state *cached_dc_state;
 
-	struct dm_comressor_info compressor;
+	struct dm_compressor_info compressor;
 
 	const struct firmware *fw_dmcu;
 	uint32_t dmcu_fw_version;
@@ -334,12 +336,52 @@ struct amdgpu_display_manager {
 	 */
 	const struct gpu_info_soc_bounding_box_v1_0 *soc_bounding_box;
 
+#ifdef CONFIG_DEBUG_FS
+	/**
+	 * @crc_win_x_start_property:
+	 *
+	 * X start of the crc calculation window
+	 */
+	struct drm_property *crc_win_x_start_property;
+	/**
+	 * @crc_win_y_start_property:
+	 *
+	 * Y start of the crc calculation window
+	 */
+	struct drm_property *crc_win_y_start_property;
+	/**
+	 * @crc_win_x_end_property:
+	 *
+	 * X end of the crc calculation window
+	 */
+	struct drm_property *crc_win_x_end_property;
+	/**
+	 * @crc_win_y_end_property:
+	 *
+	 * Y end of the crc calculation window
+	 */
+	struct drm_property *crc_win_y_end_property;
+#endif
 	/**
 	 * @mst_encoders:
 	 *
 	 * fake encoders used for DP MST.
 	 */
 	struct amdgpu_encoder mst_encoders[AMDGPU_DM_MAX_CRTC];
+	bool force_timing_sync;
+};
+
+enum dsc_clock_force_state {
+	DSC_CLK_FORCE_DEFAULT = 0,
+	DSC_CLK_FORCE_ENABLE,
+	DSC_CLK_FORCE_DISABLE,
+};
+
+struct dsc_preferred_settings {
+	enum dsc_clock_force_state dsc_force_enable;
+	uint32_t dsc_num_slices_v;
+	uint32_t dsc_num_slices_h;
+	uint32_t dsc_bits_per_pixel;
 };
 
 struct amdgpu_dm_connector {
@@ -389,6 +431,7 @@ struct amdgpu_dm_connector {
 	uint32_t debugfs_dpcd_size;
 #endif
 	bool force_yuv420_output;
+	struct dsc_preferred_settings dsc_settings;
 };
 
 #define to_amdgpu_dm_connector(x) container_of(x, struct amdgpu_dm_connector, base)
@@ -404,6 +447,15 @@ struct dm_plane_state {
 	struct drm_plane_state base;
 	struct dc_plane_state *dc_state;
 };
+
+#ifdef CONFIG_DEBUG_FS
+struct crc_rec {
+	uint16_t x_start;
+	uint16_t y_start;
+	uint16_t x_end;
+	uint16_t y_end;
+	};
+#endif
 
 struct dm_crtc_state {
 	struct drm_crtc_state base;
@@ -421,12 +473,15 @@ struct dm_crtc_state {
 	bool freesync_timing_changed;
 	bool freesync_vrr_info_changed;
 
+	bool dsc_force_changed;
 	bool vrr_supported;
 	struct mod_freesync_config freesync_config;
-	struct mod_vrr_params vrr_params;
 	struct dc_info_packet vrr_infopacket;
 
 	int abm_level;
+#ifdef CONFIG_DEBUG_FS
+	struct crc_rec crc_window;
+#endif
 };
 
 #define to_dm_crtc_state(x) container_of(x, struct dm_crtc_state, base)
@@ -447,6 +502,9 @@ struct dm_connector_state {
 	uint8_t underscan_hborder;
 	bool underscan_enable;
 	bool freesync_capable;
+#ifdef CONFIG_DRM_AMD_DC_HDCP
+	bool update_hdcp;
+#endif
 	uint8_t abm_level;
 	int vcpi_slots;
 	uint64_t pbn;
@@ -484,6 +542,8 @@ void dm_restore_drm_connector_state(struct drm_device *dev,
 
 void amdgpu_dm_update_freesync_caps(struct drm_connector *connector,
 					struct edid *edid);
+
+void amdgpu_dm_trigger_timing_sync(struct drm_device *dev);
 
 #define MAX_COLOR_LUT_ENTRIES 4096
 /* Legacy gamm LUT users such as X doesn't like large LUT sizes */
