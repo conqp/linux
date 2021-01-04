@@ -1,25 +1,24 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
 /*
- * HID  descriptor stuructures
- * Copyright 2020 Advanced Micro Devices, Inc.
- * Authors: Nehal Bakulchandra Shah <Nehal-bakulchandra.shah@amd.com>
- *	    Sandeep Singh <Sandeep.singh@amd.com>
+ * AMD Sensor Fusion Hub HID descriptor definitions
+ *
+ * Author:	Nehal Bakulchandra Shah <Nehal-bakulchandra.shah@amd.com>
  */
 
-#ifndef AMD_SFH_HID_REPORT_DESCRIPTOR_H
-#define AMD_SFH_HID_REPORT_DESCRIPTOR_H
+#ifndef AMD_SFH_HID_DESCRIPTORS_H
+#define AMD_SFH_HID_DESCRIPTORS_H
 
 // Accelerometer 3D Sensor
 static const u8 accel3_report_descriptor[] = {
-0x05, 0x20,          /* Usage page */
-0x09, 0x73,          /* Motion type Accel 3D */
-0xA1, 0x00,          /* HID Collection (Physical) */
+0x05, 0x20,		  /* Usage page */
+0x09, 0x73,		  /* Motion type Accel 3D */
+0xA1, 0x00,		  /* HID Collection (Physical) */
 
 //feature reports(xmit/receive)
-0x85, 1,           /* HID  Report ID */
+0x85, 1,		   /* HID  Report ID */
 0x05, 0x20,	   /* HID usage page sensor */
 0x0A, 0x09, 0x03,  /* Sensor property and sensor connection type */
-0x15, 0,           /* HID logical MIN_8(0) */
+0x15, 0,		   /* HID logical MIN_8(0) */
 0x25, 2,	   /* HID logical MAX_8(2) */
 0x75, 8,	   /* HID report size(8) */
 0x95, 1,	   /* HID report count(1) */
@@ -27,13 +26,13 @@ static const u8 accel3_report_descriptor[] = {
 0x0A, 0x30, 0x08, /* Sensor property connection type intergated sel*/
 0x0A, 0x31, 0x08, /* Sensor property connection type attached sel */
 0x0A, 0x32, 0x08, /* Sensor property connection type external sel */
-0xB1, 0x00,       /* HID feature (Data_Arr_Abs) */
+0xB1, 0x00,	   /* HID feature (Data_Arr_Abs) */
 0xC0,		  /* HID end collection */
 0x0A, 0x16, 0x03, /* HID usage sensor property reporting state */
-0x15, 0,          /* HID logical Min_8(0) */
+0x15, 0,		  /* HID logical Min_8(0) */
 0x25, 5,	  /* HID logical Max_8(5) */
 0x75, 8,	  /* HID report size(8) */
-0x95, 1,          /* HID report count(1) */
+0x95, 1,		  /* HID report count(1) */
 0xA1, 0x02,	  /* HID collection(logical) */
 0x0A, 0x40, 0x08, /* Sensor property report state no events sel */
 0x0A, 0x41, 0x08, /* Sensor property report state all events sel */
@@ -55,7 +54,7 @@ static const u8 accel3_report_descriptor[] = {
 0x0A, 0x53, 0x08, /* Sensor property power state D2 standby with wake sel */
 0x0A, 0x54, 0x08, /* Sensor property power state D3 sleep with wake  sel */
 0x0A, 0x55, 0x08, /* Sensor property power state D4 power off sel */
-0xB1, 0x00,       /* HID feature (Data_Arr_Abs) */
+0xB1, 0x00,	   /* HID feature (Data_Arr_Abs) */
 0xC0,		  /* HID end collection */
 0x0A, 0x01, 0x02, /* HID usage sensor state */
 0x15, 0,	  /* HID logical Min_8(0) */
@@ -339,7 +338,7 @@ const u8 gyro3_report_descriptor[] = {
 0xC0,			/* HID end collection */
 };
 
-const u8 comp3_report_descriptor[] = {
+const u8 magno_report_descriptor[] = {
 0x05, 0x20,		/* Usage page */
 0x09, 0x83,		/* Motion type Orientation compass 3D */
 0xA1, 0x00,		/* HID Collection (Physical) */
@@ -371,7 +370,7 @@ const u8 comp3_report_descriptor[] = {
 0x0A, 0x45, 0x08,	/* Sensor reporting state threshold events wake sel */
 0xB1, 0x00,		/* HID feature (Data_Arr_Abs) */
 0xC0,			/* HID end collection */
-0x0A, 0x19, 0x03,       /* HID usage sensor property power state */
+0x0A, 0x19, 0x03,	   /* HID usage sensor property power state */
 0x15, 0,		/* HID logical Min_8(0) */
 0x25, 5,		/* HID logical Max_8(5) */
 0x75, 8,		/* HID report size(8) */
@@ -391,13 +390,13 @@ const u8 comp3_report_descriptor[] = {
 0x75, 8,		/* HID report size(8) */
 0x95, 1,		/* HID report count(1) */
 0xA1, 0x02,		/* HID collection(logical) */
-0x0A, 0x00, 0x08,       /* HID usage sensor state unknown sel */
-0x0A, 0x01, 0x08,       /* HID usage sensor state ready sel */
-0x0A, 0x02, 0x08,       /* HID usage sensor state not available sel */
-0x0A, 0x03, 0x08,       /* HID usage sensor state no data sel */
-0x0A, 0x04, 0x08,       /* HID usage sensor state initializing sel */
-0x0A, 0x05, 0x08,       /* HID usage sensor state access denied sel */
-0x0A, 0x06, 0x08,       /* HID usage sensor state error sel */
+0x0A, 0x00, 0x08,	   /* HID usage sensor state unknown sel */
+0x0A, 0x01, 0x08,	   /* HID usage sensor state ready sel */
+0x0A, 0x02, 0x08,	   /* HID usage sensor state not available sel */
+0x0A, 0x03, 0x08,	   /* HID usage sensor state no data sel */
+0x0A, 0x04, 0x08,	   /* HID usage sensor state initializing sel */
+0x0A, 0x05, 0x08,	   /* HID usage sensor state access denied sel */
+0x0A, 0x06, 0x08,	   /* HID usage sensor state error sel */
 0xB1, 0x00,		/* HID feature (Data_Arr_Abs) */
 0xC0,			/* HID end collection */
 0x0A, 0x0E, 0x03,	/* HID usage sensor property report interval */
@@ -516,7 +515,7 @@ const u8 als_report_descriptor[] = {
 0x09, 0x41,	/* HID usage sensor type Ambientlight  */
 0xA1, 0x00,	/* HID Collection (Physical) */
 
-//feature reports(xmit/receive)//
+//feature reports(xmit/receive)
 0x85, 4,		/* HID  Report ID */
 0x05, 0x20,		/* HID usage page sensor */
 0x0A, 0x09, 0x03,	/* Sensor property and sensor connection type */
