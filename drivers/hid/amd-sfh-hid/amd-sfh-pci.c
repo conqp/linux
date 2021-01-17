@@ -97,21 +97,6 @@ void amd_sfh_stop_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx)
 EXPORT_SYMBOL_GPL(amd_sfh_stop_sensor);
 
 /**
- * amd_sfh_pci_probed - Checks whether the PCI driver was probed successfully.
- * @pci_dev:	Sensor Fusion Hub PCI device
- */
-bool amd_sfh_pci_probed(struct pci_dev *pci_dev)
-{
-	struct amd_sfh_dev *privdata = pci_get_drvdata(pci_dev);
-
-	if (privdata)
-		return true;
-
-	return false;
-}
-EXPORT_SYMBOL_GPL(amd_sfh_pci_probed);
-
-/**
  * amd_sfh_stop_all_sensors- Stops all sensors on the SFH.
  * @pci_dev:	Sensor Fusion Hub PCI device
  */

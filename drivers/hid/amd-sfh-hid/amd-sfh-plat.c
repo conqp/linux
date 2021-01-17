@@ -270,11 +270,6 @@ static int amd_sfh_platform_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	if (!amd_sfh_pci_probed(pci_dev)) {
-		dev_err(&pdev->dev, "PCI driver not loaded!\n");
-		return -EPROBE_DEFER;
-	}
-
 	privdata->pci_dev = pci_dev;
 	platform_set_drvdata(pdev, privdata);
 	amd_sfh_init_hid_devices(privdata);
