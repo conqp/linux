@@ -235,17 +235,25 @@ static void amd_sfh_init_hid_devices(struct amd_sfh_plat_dev *privdata)
  */
 static void remove_hid_devices(struct amd_sfh_plat_dev *privdata)
 {
-	if (privdata->accel)
+	if (privdata->accel) {
 		hid_destroy_device(privdata->accel);
+		privdata->accel = NULL;
+	}
 
-	if (privdata->gyro)
+	if (privdata->gyro) {
 		hid_destroy_device(privdata->gyro);
+		privdata->gyro = NULL;
+	}
 
-	if (privdata->magno)
+	if (privdata->magno) {
 		hid_destroy_device(privdata->magno);
+		privdata->magno = NULL;
+	}
 
-	if (privdata->als)
+	if (privdata->als) {
 		hid_destroy_device(privdata->als);
+		privdata->als = NULL;
+	}
 }
 
 /**
