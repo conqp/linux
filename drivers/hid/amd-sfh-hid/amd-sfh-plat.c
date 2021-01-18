@@ -26,12 +26,12 @@
 #define AMD_SFH_ALL_SENSORS	(ACCEL_MASK + GYRO_MASK + MAGNO_MASK + ALS_MASK)
 
 /* Module parameters */
-static int sensor_mask_override = -1;
-static int sensor_update_interval = 200;
+static ushort sensor_mask_override = 0;
+static ushort sensor_update_interval = 200;
 
-module_param_named(sensor_mask, sensor_mask_override, int, 0644);
+module_param_named(sensor_mask, sensor_mask_override, ushort, 0644);
 MODULE_PARM_DESC(sensor_mask, "override the detected sensors mask");
-module_param_named(interval, sensor_update_interval, int, 0644);
+module_param_named(interval, sensor_update_interval, ushort, 0644);
 MODULE_PARM_DESC(interval, "override the sensor update interval");
 
 /**
@@ -121,7 +121,7 @@ static struct hid_device *amd_sfh_hid_probe(struct pci_dev *pci_dev,
 
 	hid_data->sensor_idx = sensor_idx;
 	hid_data->pci_dev = pci_dev;
-	hid_data->hid = hid;
+	hid_data->hid = hid;uint
 	hid_data->cpu_addr = NULL;
 	hid_data->interval = sensor_update_interval;
 
@@ -172,12 +172,12 @@ err_hid_alloc:
  * If sensors were specified, that the SFH fundamentally does not
  * support, it logs a warning to the kernel ring buffer.
  */
-static int amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
+static ushort amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
 {
-	int invalid_sensors;
-	int sensor_mask = amd_sfh_get_sensor_mask(pci_dev);
+	ushort invalid_sensors;
+	ushort sensor_mask = amd_sfh_get_sensor_mask(pci_dev);
 
-	if (sensor_mask_override >= 0)
+	if (sensor_mask_override > 0)
 		sensor_mask = sensor_mask_override;
 
 	pci_info(pci_dev, "Sensor mask: %#04x\n", sensor_mask);
@@ -201,7 +201,7 @@ static int amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
 static void amd_sfh_init_hid_devices(struct amd_sfh_plat_dev *privdata)
 {
 	struct pci_dev *pci_dev;
-	int sensor_mask;
+	ushort sensor_mask;
 
 	pci_dev = privdata->pci_dev;
 	sensor_mask = amd_sfh_plat_get_sensor_mask(pci_dev);
