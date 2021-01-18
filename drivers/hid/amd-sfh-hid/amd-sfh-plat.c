@@ -121,7 +121,7 @@ static struct hid_device *amd_sfh_hid_probe(struct pci_dev *pci_dev,
 
 	hid_data->sensor_idx = sensor_idx;
 	hid_data->pci_dev = pci_dev;
-	hid_data->hid = hid;uint
+	hid_data->hid = hid;
 	hid_data->cpu_addr = NULL;
 	hid_data->interval = sensor_update_interval;
 
