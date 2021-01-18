@@ -182,7 +182,7 @@ static int amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
 
 	pci_info(pci_dev, "Sensor mask: %#04x\n", sensor_mask);
 
-	invalid_sensors = (AMD_SFH_ALL_SENSORS & sensor_mask) ^ sensor_mask;
+	invalid_sensors = ~AMD_SFH_ALL_SENSORS & sensor_mask;
 	if (invalid_sensors)
 		pci_warn(pci_dev, "Invalid sensors: %#04x\n", invalid_sensors);
 
