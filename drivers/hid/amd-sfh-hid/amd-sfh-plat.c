@@ -26,10 +26,10 @@
 #define AMD_SFH_ALL_SENSORS	(ACCEL_MASK + GYRO_MASK + MAGNO_MASK + ALS_MASK)
 
 /* Module parameters */
-static ushort sensor_mask_override = 0;
+static uint sensor_mask_override = 0;
 static ushort sensor_update_interval = 200;
 
-module_param_named(sensor_mask, sensor_mask_override, ushort, 0644);
+module_param_named(sensor_mask, sensor_mask_override, uint, 0644);
 MODULE_PARM_DESC(sensor_mask, "override the detected sensors mask");
 module_param_named(interval, sensor_update_interval, ushort, 0644);
 MODULE_PARM_DESC(interval, "override the sensor update interval");
@@ -172,10 +172,10 @@ err_hid_alloc:
  * If sensors were specified, that the SFH fundamentally does not
  * support, it logs a warning to the kernel ring buffer.
  */
-static ushort amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
+static uint amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
 {
-	ushort invalid_sensors;
-	ushort sensor_mask = amd_sfh_get_sensor_mask(pci_dev);
+	uint invalid_sensors;
+	uint sensor_mask = amd_sfh_get_sensor_mask(pci_dev);
 
 	if (sensor_mask_override > 0)
 		sensor_mask = sensor_mask_override;
