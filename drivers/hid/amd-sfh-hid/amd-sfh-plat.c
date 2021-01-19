@@ -201,7 +201,7 @@ static uint amd_sfh_plat_get_sensor_mask(struct pci_dev *pci_dev)
 static void amd_sfh_init_hid_devices(struct amd_sfh_plat_dev *privdata)
 {
 	struct pci_dev *pci_dev;
-	ushort sensor_mask;
+	uint sensor_mask;
 
 	pci_dev = privdata->pci_dev;
 	sensor_mask = amd_sfh_plat_get_sensor_mask(pci_dev);
