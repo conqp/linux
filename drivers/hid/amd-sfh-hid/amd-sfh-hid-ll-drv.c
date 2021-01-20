@@ -129,6 +129,17 @@ static void amd_sfh_hid_ll_close(struct hid_device *hid)
 }
 
 /**
+ * amd_sfh_hid_ll_power - Power management.
+ * @hid:	The hid device
+ *
+ * Handles the HID device's power management.
+ */
+static int amd_sfh_hid_ll_power(struct hid_device *hid, int level)
+{
+	hid_err(hid, "Got power level: %i", level);
+}
+
+/**
  * amd_sfh_hid_ll_raw_request - Handles HID requests.
  * @hid:	The HID device
  * @reportnum:	The HID report ID
@@ -169,5 +180,6 @@ struct hid_ll_driver amd_sfh_hid_ll_driver = {
 	.stop	=	amd_sfh_hid_ll_stop,
 	.open	=	amd_sfh_hid_ll_open,
 	.close	=	amd_sfh_hid_ll_close,
+	.power	=	amd_sfh_hid_ll_power,
 	.raw_request  =	amd_sfh_hid_ll_raw_request,
 };
