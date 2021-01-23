@@ -139,7 +139,7 @@ static void amd_sfh_hid_ll_close(struct hid_device *hid)
  */
 static int amd_sfh_hid_ll_power(struct hid_device *hid, int level)
 {
-	hid_err(hid, "Got power level: %i", level);
+	hid_err(hid, "POWER: %i", level);
 	return 0;
 }
 
