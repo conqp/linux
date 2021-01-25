@@ -1,6 +1,6 @@
-========================================
-Kernel drivers: amd-sfh-pci, amd-sfh-hid
-========================================
+=======================
+Kernel drivers: amd-sfh
+=======================
 
 Supported adapters:
   * AMD Sensor Fusion Hub PCIe interface
@@ -16,8 +16,8 @@ Authors:
 Description
 ===========
 The AMD Sensor Fushion Hub (SFH) is part of a SOC on Ryzen-based platforms.
-The SFH uses HID over PCIe bus. In terms of architecture it is much more
-resmebles like ISH. However the major difference is, that currently HID reports
+The SFH uses HID over PCIe bus. In terms of architecture it much resmebles the ISH.
+However the major difference is, that currently HID reports
 are being generated within the kernel driver.
 
 Block Diagram
@@ -34,7 +34,7 @@ Block Diagram
     +-------------------------------+
 
     +-------------------------------+
-    |      HID platform driver      |
+    |     HID client interface      |
     +-------------------------------+
 
     +-------------------------------+
@@ -56,18 +56,14 @@ the exposed functions from the PCI driver (see below) and creates DMA mappings
 to access the DRAM of the PCI device to retrieve feature and input reports
 from it.
 
-HID platform driver (`amd-sfh-hid`)
------------------------------------
+HID client interface
+--------------------
 The aforementioned HID devices are being managed, i.e. created on probing and
-destroyed on removing, by the platform driver. It is being loaded through ACPI
-table matching if the PCI driver was loaded successfully.
+destroyed on removing, by the client interface used by the PCI driver.
 It determines the HID devices to be created on startup using the connected
 sensors bitmask retrieved by invoking the respective function of the PCI driver.
-On some systems the firmware does not provide the information about sensors
-connected to the SFH device. In this case, the detected sensors can be manually
-overridden by setting the driver's module parameter `sensor_mask=<int>`.
 
-PCI device driver (`amd-sfh-pci`)
+PCI device driver (`amd-sfh`)
 ---------------------------------
 The PCI driver is responsible for making all transaction with the chip's
 firmware over PCI-e.
@@ -83,19 +79,19 @@ recommended to always write a minimum of 32 bytes into the DRAM.
 Driver loading
 --------------
 
-+------------+-----------------+----------------------+
-| PCI driver | Platform driver | HID low-level driver |
-+============+=================+======================+
-| Loaded at boot time if       | Used by spawned HIDs |
-| device is present.           |                      |
-+------------------------------+----------------------+
++------------------------+----------------------+
+|       PCI driver       | HID low-level driver |
++========================+======================+
+| Loaded at boot time if | Used by spawned HIDs |
+| device is present.     |                      |
++------------------------+----------------------+
 
 Data flow table
 ---------------
 .. code-block:: none
 
                                                  +===============================================+
-    +============+        Get sensor mask        |                Platform driver                |
+    +============+        Get sensor mask        |             HID client interface              |
     | PCI driver | <---------------------------- +===============================================+
     +============+    of available HID devices   | * Probe HID devices according to sensor mask. |
           ^                                      | * Start periodical polling from DRAM.         |
@@ -112,21 +108,30 @@ Data flow table
 Quirks
 ------
 On some systems, the sensor hub has not been programmed with information about
-the sensors active on the device. This results in no sensors bein activated and
-no HID devices being spawned by the driver. To manually active the respective
-sensors, you can load the module `amd-sfh-hid` with the kernel parameter
-`sensor_mask=<int>`. The available sensors are currently:
+the sensors active on the device. This would result in no sensors being
+activated and no HID devices being spawned by the driver.
+The driver already has quirks for some devices, that automatically
+compensate for this by DMI matching and returning an appropriate sensor mask
+for the respective device.
+You can also activate the respective sensors manually, byloading the module
+`amd-sfh` with the kernel parameter `sensor_mask=<int>`.
+Available sensors are:
 
 +----------------------+----------+
 |        sensor        |   mask   |
 +======================+==========+
 | accelerometer        |  BIT(0)  |
++----------------------+----------+
 | gyroscope            |  BIT(1)  |
++----------------------+----------+
 | magnetometer         |  BIT(2)  |
++----------------------+----------+
 | ambient light sensor |  BIT(19) |
 +----------------------+----------+
 
 To enable e.g. only the accelerometer:
 
-    $ cat /etc/modprobe.d/amd_sfh.conf
-    options amd_sfh_hid sensor_mask=1
+.. code-block:: console
+
+	$ cat /etc/modprobe.d/amd_sfh.conf
+	options amd_sfh sensor_mask=1
