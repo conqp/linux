@@ -12,8 +12,10 @@
 
 #include <linux/hid.h>
 #include <linux/pci.h>
+#include <linux/types.h>
+#include <linux/workqueue.h>
 
-#include "amd-sfh-pci.h"
+#include "amd-sfh.h"
 
 /**
  * struct amd_sfh_hid_data - Per HID device driver data.
@@ -32,7 +34,7 @@ struct amd_sfh_hid_data {
 	struct hid_device *hid;
 	u32 *cpu_addr;
 	dma_addr_t dma_handle;
-	unsigned int interval;
+	u8 interval;
 };
 
 /* The low-level driver for AMD SFH HID devices */

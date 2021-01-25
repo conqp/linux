@@ -10,8 +10,8 @@
 #include <linux/dma-mapping.h>
 #include <linux/hid.h>
 #include <linux/pci.h>
-#include <linux/wait.h>
 #include <linux/sched.h>
+#include <linux/wait.h>
 #include <linux/workqueue.h>
 
 #include "amd-sfh-hid-ll-drv.h"
@@ -26,7 +26,7 @@
  *
  * This function gets called during call to hid_add_device
  *
- * Return: 0 on success and non zero on error
+ * Return: 0 on success and non zero on error.
  */
 static int amd_sfh_hid_ll_parse(struct hid_device *hid)
 {
@@ -66,13 +66,13 @@ free_buf:
  * amd_sfh_hid_ll_start - Starts the HID device.
  * @hid:	The HID device
  *
- * Allocates DMA memory and schedules report polling.
+ * Allocates DMA memory on the PCI device.
+ * Returns 0 on success and non-zero on error.
  */
 static int amd_sfh_hid_ll_start(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	hid_err(hid, "STARTING");
 	hid_data->cpu_addr = dma_alloc_coherent(&hid_data->pci_dev->dev,
 						AMD_SFH_HID_DMA_SIZE,
 						&hid_data->dma_handle,
@@ -87,13 +87,12 @@ static int amd_sfh_hid_ll_start(struct hid_device *hid)
  * amd_sfh_hid_ll_stop - Stops the HID device.
  * @hid:	The HID device
  *
- * Stops report polling jobs and frees the DMA memory.
+ * Frees the DMA memory on the PCI device.
  */
 static void amd_sfh_hid_ll_stop(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	hid_err(hid, "STOPPING");
 	dma_free_coherent(&hid_data->pci_dev->dev, AMD_SFH_HID_DMA_SIZE,
 			  hid_data->cpu_addr, hid_data->dma_handle);
 	hid_data->cpu_addr = NULL;
@@ -103,13 +102,14 @@ static void amd_sfh_hid_ll_stop(struct hid_device *hid)
  * amd_sfh_hid_ll_open - Opens the HID device.
  * @hid:	The HID device
  *
- * Starts the corresponding sensor via the PCI driver.
+ * Starts the corresponding sensor via the PCI driver
+ * and schedules report polling.
+ * Always returns 0.
  */
 static int amd_sfh_hid_ll_open(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	hid_err(hid, "OPENING");
 	amd_sfh_start_sensor(hid_data->pci_dev, hid_data->sensor_idx,
 			     hid_data->dma_handle, hid_data->interval);
 	schedule_delayed_work(&hid_data->work, hid_data->interval);
@@ -120,27 +120,14 @@ static int amd_sfh_hid_ll_open(struct hid_device *hid)
  * amd_sfh_hid_ll_close - Closes the HID device.
  * @hid:	The HID device
  *
- * Stops the corresponding sensor via the PCI driver.
+ * Stops report polling and the corresponding sensor via the PCI driver.
  */
 static void amd_sfh_hid_ll_close(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	hid_err(hid, "CLOSING");
 	cancel_delayed_work_sync(&hid_data->work);
 	amd_sfh_stop_sensor(hid_data->pci_dev, hid_data->sensor_idx);
-}
-
-/**
- * amd_sfh_hid_ll_power - Power management.
- * @hid:	The hid device
- *
- * Handles the HID device's power management.
- */
-static int amd_sfh_hid_ll_power(struct hid_device *hid, int level)
-{
-	hid_err(hid, "POWER: %i", level);
-	return 0;
 }
 
 /**
@@ -184,6 +171,5 @@ struct hid_ll_driver amd_sfh_hid_ll_driver = {
 	.stop	=	amd_sfh_hid_ll_stop,
 	.open	=	amd_sfh_hid_ll_open,
 	.close	=	amd_sfh_hid_ll_close,
-	.power	=	amd_sfh_hid_ll_power,
 	.raw_request  =	amd_sfh_hid_ll_raw_request,
 };

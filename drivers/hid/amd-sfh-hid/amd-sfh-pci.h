@@ -12,7 +12,7 @@
 #include <linux/pci.h>
 #include <linux/types.h>
 
-#define PCI_DEVICE_ID_AMD_SFH	0x15E4
+#include "amd-sfh.h"
 
 /**
  * Sensor Fusion Hub communication registers
@@ -37,20 +37,6 @@ enum {
 	AMD_P2C_MSG3 = 0x1068C,		/* SFH sensor info */
 	AMD_P2C_MSG_INTEN = 0x10690,	/* SFH interrupt gen register */
 	AMD_P2C_MSG_INTSTS = 0x10694,	/* Interrupt status */
-};
-
-/**
- * The sensor indices on the AMD SFH device
- * @ACCEL_IDX:	Index of the accelerometer
- * @GYRO_IDX:	Index of the gyroscope
- * @MAG_IDX:	Index of the magnetometer
- * @ALS_IDX:	Index of the ambient light sensor
- */
-enum sensor_idx {
-	ACCEL_IDX = 0,
-	GYRO_IDX,
-	MAG_IDX,
-	ALS_IDX = 19,
 };
 
 /**
@@ -93,17 +79,6 @@ union amd_sfh_parm {
 	} s;
 };
 
-/**
- * struct amd_sfh_dev - AMD SFH PCI device data
- * @pci_dev:		Handled PCI device
- * @mmio:		iommapped registers
- */
-struct amd_sfh_dev {
-	struct pci_dev *pci_dev;
-	void __iomem *mmio;
-};
-
-/* SFH PCI driver interface functions */
 uint amd_sfh_get_sensor_mask(struct pci_dev *pci_dev);
 void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
 			  dma_addr_t dma_handle, unsigned int interval);

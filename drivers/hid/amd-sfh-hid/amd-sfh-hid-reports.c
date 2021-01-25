@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /*
- *  AMD SFH HID report and descriptor generation
+ *  AMD Sensor Fusion Hub HID report and descriptor generation
  *
  *  Author: Nehal Bakulchandra Shah <Nehal-Bakulchandra.Shah@amd.com>
  *          Richard Neumann <mail@richard-neumann.de>
  */
 
 #include <linux/kernel.h>
-#include <linux/string.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 
+#include "amd-sfh.h"
 #include "amd-sfh-hid-descriptors.h"
 #include "amd-sfh-hid-reports.h"
-#include "amd-sfh-pci.h"
 
 #define FIRMWARE_MULTIPLIER						1000
 #define HID_USAGE_SENSOR_PROP_REPORTING_STATE_ALL_EVENTS_ENUM		0x41
@@ -71,7 +71,7 @@ EXPORT_SYMBOL_GPL(get_report_descriptor);
  * @sensor_idx:		The sensor index
  * @descriptor_name:	The requested descriptor
  *
- * Returns the respective descriptor's size or <0 on errors.
+ * Returns the respective descriptor's size or < 0 on errors.
  */
 int get_descriptor_size(enum sensor_idx sensor_idx, enum desc_type desc_type)
 {
