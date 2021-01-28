@@ -38,23 +38,22 @@ MODULE_PARM_DESC(sensor_mask, "override the sensors bitmask");
 uint amd_sfh_get_sensor_mask(struct pci_dev *pci_dev)
 {
 	uint sensor_mask;
-	struct amd_sfh_data *privdata = pci_get_drvdata(pci_dev);
+	struct amd_sfh_data *privdata;
+	const struct amd_sfh_quirks *quirks;
 
-	sensor_mask = readl(privdata->mmio + AMD_P2C_MSG3);
-	/* Correct bit shift in firmware register */
-	sensor_mask = sensor_mask >> 4;
+	privdata = pci_get_drvdata(pci_dev);
 
+	/* Read bit-shifted sensor mask from P2C register */
+	sensor_mask = readl(privdata->mmio + AMD_P2C_MSG3) >> 4;
 	if (!sensor_mask)
 		pci_err(pci_dev, "[Firmware Bug]: No sensors marked active!\n");
 
-	if (sensor_mask_override) {
-		pci_warn(pci_dev, "Sensor bitmask override: %x -> %x.\n",
-			 sensor_mask, sensor_mask_override);
+	if (sensor_mask_override)
 		return sensor_mask_override;
-	}
 
-	if (!sensor_mask)
-		return amd_sfh_quirks_get_sensor_mask(pci_dev);
+	quirks = amd_sfh_get_quirks();
+	if (quirks)
+		return quirks->sensor_mask;
 
 	return sensor_mask;
 }
@@ -64,10 +63,9 @@ uint amd_sfh_get_sensor_mask(struct pci_dev *pci_dev)
  * @pci_dev:	Sensor Fusion Hub PCI device
  * @sensor_idx:	Sensor index
  * @dma_handle:	DMA handle
- * @interval:	Sensor poll interval
  */
 void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
-			  dma_addr_t dma_handle, unsigned int interval)
+			  dma_addr_t dma_handle)
 {
 	struct amd_sfh_data *privdata;
 	union amd_sfh_parm parm;
@@ -77,7 +75,7 @@ void amd_sfh_start_sensor(struct pci_dev *pci_dev, enum sensor_idx sensor_idx,
 
 	cmd.ul = 0;
 	cmd.s.cmd_id = AMD_SFH_CMD_ENABLE_SENSOR;
-	cmd.s.interval = interval;
+	cmd.s.interval = AMD_SFH_UPDATE_INTERVAL;
 	cmd.s.sensor_id = sensor_idx;
 
 	parm.ul = 0;
