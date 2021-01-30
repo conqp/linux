@@ -11,7 +11,6 @@
 #include <linux/hid.h>
 #include <linux/pci.h>
 #include <linux/sched.h>
-#include <linux/wait.h>
 #include <linux/workqueue.h>
 
 #include "amd-sfh.h"
@@ -20,6 +19,35 @@
 #include "amd-sfh-pci.h"
 
 #define AMD_SFH_HID_DMA_SIZE	(sizeof(int) * 8)
+
+/**
+ * amd_sfh_hid_poll - Updates the input report for a HID device.
+ * @work:	The delayed work
+ *
+ * Polls input reports from the respective HID devices and submits
+ * them by invoking hid_input_report() from hid-core.
+ */
+static void amd_sfh_hid_poll(struct work_struct *work)
+{
+	struct amd_sfh_hid_data *hid_data;
+	struct hid_device *hid;
+	int size;
+
+	hid_data = container_of(work, struct amd_sfh_hid_data, work.work);
+	hid = hid_data->hid;
+
+	size = get_input_report(hid_data->sensor_idx, 1, hid_data->report_buf,
+				hid_data->report_size, hid_data->cpu_addr);
+	if (size < 0) {
+		hid_err(hid, "Failed to get input report!\n");
+		goto reschedule;
+	}
+
+	hid_input_report(hid, HID_INPUT_REPORT, hid_data->report_buf, size, 0);
+
+reschedule:
+	schedule_delayed_work(&hid_data->work, AMD_SFH_UPDATE_INTERVAL);
+}
 
 /**
  * amd_sfh_hid_ll_parse - Callback to parse HID descriptor.
@@ -31,36 +59,10 @@
  */
 static int amd_sfh_hid_ll_parse(struct hid_device *hid)
 {
-	int rc;
-	u8 *buf;
-	size_t size;
-	struct amd_sfh_hid_data *hid_data;
+	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	hid_data = hid->driver_data;
-
-	size = get_descriptor_size(hid_data->sensor_idx, AMD_SFH_DESCRIPTOR);
-	if (size < 0) {
-		hid_err(hid, "Failed to get report descriptor size!\n");
-		return -EINVAL;
-	}
-
-	buf = kzalloc(size, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
-
-	rc = get_report_descriptor(hid_data->sensor_idx, buf);
-	if (rc) {
-		hid_err(hid, "Failed to get report descriptor!\n");
-		goto free_buf;
-	}
-
-	rc = hid_parse_report(hid, buf, size);
-	if (rc)
-		hid_err(hid, "Failed to parse HID report!\n");
-
-free_buf:
-	kfree(buf);
-	return rc;
+	return hid_parse_report(hid, hid_data->descriptor_buf,
+				hid_data->descriptor_size);
 }
 
 /**
@@ -81,6 +83,7 @@ static int amd_sfh_hid_ll_start(struct hid_device *hid)
 	if (!hid_data->cpu_addr)
 		return -EIO;
 
+	INIT_DELAYED_WORK(&hid_data->work, amd_sfh_hid_poll);
 	return 0;
 }
 
