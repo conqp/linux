@@ -15,64 +15,74 @@
 
 #include "amd-sfh.h"
 #include "amd-sfh-hid-ll-drv.h"
-#include "amd-sfh-hid-reports.h"
 #include "amd-sfh-pci.h"
+#include "sensors/amd-sfh-accel.h"
+#include "sensors/amd-sfh-als.h"
+#include "sensors/amd-sfh-gyro.h"
+#include "sensors/amd-sfh-mag.h"
 
 #define AMD_SFH_HID_DMA_SIZE	(sizeof(int) * 8)
 
 /**
- * amd_sfh_hid_poll - Updates the input report for a HID device.
- * @work:	The delayed work
+ * poll - Updates the input report for a HID device.
+ * @work:	Delayed work
  *
  * Polls input reports from the respective HID devices and submits
- * them by invoking hid_input_report() from hid-core.
+ * them by invoking hid_hw_request() from hid.h.
  */
-static void amd_sfh_hid_poll(struct work_struct *work)
+static void poll(struct work_struct *work)
 {
 	struct amd_sfh_hid_data *hid_data;
-	struct hid_device *hid;
-	int size;
+	struct hid_report *report;
 
 	hid_data = container_of(work, struct amd_sfh_hid_data, work.work);
-	hid = hid_data->hid;
 
-	size = get_input_report(hid_data->sensor_idx, 1, hid_data->report_buf,
-				hid_data->report_size, hid_data->cpu_addr);
-	if (size < 0) {
-		hid_err(hid, "Failed to get input report!\n");
+	report = hid_register_report(hid_data->hid, HID_INPUT_REPORT, 1, 1);
+	if (!report) {
+		hid_err(hid_data->hid, "Failed to register HID report!");
 		goto reschedule;
 	}
 
-	hid_input_report(hid, HID_INPUT_REPORT, hid_data->report_buf, size, 0);
+	hid_hw_request(hid_data->hid, report, HID_REQ_GET_REPORT);
 
 reschedule:
 	schedule_delayed_work(&hid_data->work, AMD_SFH_UPDATE_INTERVAL);
 }
 
 /**
- * amd_sfh_hid_ll_parse - Callback to parse HID descriptor.
- * @hid:	The HID device
+ * parse - Callback to parse HID descriptor.
+ * @hid:	HID device
  *
  * This function gets called during call to hid_add_device
  *
  * Return: 0 on success and non zero on error.
  */
-static int amd_sfh_hid_ll_parse(struct hid_device *hid)
+static int parse(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
-	return hid_parse_report(hid, hid_data->descriptor_buf,
-				hid_data->descriptor_size);
+	switch (hid_data->sensor_idx) {
+	case ACCEL_IDX:
+		return parse_accel_descriptor(hid);
+	case ALS_IDX:
+		return parse_als_descriptor(hid);
+	case GYRO_IDX:
+		return parse_gyro_descriptor(hid);
+	case MAG_IDX:
+		return parse_mag_descriptor(hid);
+	default:
+		return -EINVAL;
+	}
 }
 
 /**
- * amd_sfh_hid_ll_start - Starts the HID device.
- * @hid:	The HID device
+ * start - Starts the HID device.
+ * @hid:	HID device
  *
  * Allocates DMA memory on the PCI device.
  * Returns 0 on success and non-zero on error.
  */
-static int amd_sfh_hid_ll_start(struct hid_device *hid)
+static int start(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
@@ -83,17 +93,17 @@ static int amd_sfh_hid_ll_start(struct hid_device *hid)
 	if (!hid_data->cpu_addr)
 		return -EIO;
 
-	INIT_DELAYED_WORK(&hid_data->work, amd_sfh_hid_poll);
+	INIT_DELAYED_WORK(&hid_data->work, poll);
 	return 0;
 }
 
 /**
- * amd_sfh_hid_ll_stop - Stops the HID device.
- * @hid:	The HID device
+ * stop - Stops the HID device.
+ * @hid:	HID device
  *
  * Frees the DMA memory on the PCI device.
  */
-static void amd_sfh_hid_ll_stop(struct hid_device *hid)
+static void stop(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
@@ -103,14 +113,14 @@ static void amd_sfh_hid_ll_stop(struct hid_device *hid)
 }
 
 /**
- * amd_sfh_hid_ll_open - Opens the HID device.
- * @hid:	The HID device
+ * open - Opens the HID device.
+ * @hid:	HID device
  *
  * Starts the corresponding sensor via the PCI driver
  * and schedules report polling.
  * Always returns 0.
  */
-static int amd_sfh_hid_ll_open(struct hid_device *hid)
+static int open(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
@@ -121,12 +131,12 @@ static int amd_sfh_hid_ll_open(struct hid_device *hid)
 }
 
 /**
- * amd_sfh_hid_ll_close - Closes the HID device.
- * @hid:	The HID device
+ * close - Closes the HID device.
+ * @hid:	HID device
  *
  * Stops report polling and the corresponding sensor via the PCI driver.
  */
-static void amd_sfh_hid_ll_close(struct hid_device *hid)
+static void close(struct hid_device *hid)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
@@ -135,33 +145,57 @@ static void amd_sfh_hid_ll_close(struct hid_device *hid)
 }
 
 /**
- * amd_sfh_hid_ll_raw_request - Handles HID requests.
- * @hid:	The HID device
- * @reportnum:	The HID report ID
- * @buf:	The write buffer for HID data
- * @len:	The size of the write buffer
- * @rtype:	The report type
- * @reqtype:	The request type
+ * raw_request - Handles HID requests.
+ * @hid:	HID device
+ * @reportnum:	HID report ID
+ * @buf:	Write buffer for HID data
+ * @len:	Size of the write buffer
+ * @rtype:	Report type
+ * @reqtype:	Request type
  *
  * Delegates to the reporting functions
  * defined in amd-sfh-hid-descriptor.h.
  */
-static int amd_sfh_hid_ll_raw_request(struct hid_device *hid,
-				      unsigned char reportnum, u8 *buf,
-				      size_t len, unsigned char rtype,
-				      int reqtype)
+static int raw_request(struct hid_device *hid, unsigned char reportnum, u8 *buf,
+		       size_t len, unsigned char rtype, int reqtype)
 {
 	struct amd_sfh_hid_data *hid_data = hid->driver_data;
 
+	if (reqtype != HID_REQ_GET_REPORT)
+		return -EINVAL;
+
 	switch (rtype) {
 	case HID_FEATURE_REPORT:
-		return get_feature_report(hid_data->sensor_idx, reportnum, buf,
-					  len);
+		switch (hid_data->sensor_idx) {
+		case ACCEL_IDX:
+			return get_accel_feature_report(reportnum, buf, len);
+		case ALS_IDX:
+			return get_als_feature_report(reportnum, buf, len);
+		case GYRO_IDX:
+			return get_gyro_feature_report(reportnum, buf, len);
+		case MAG_IDX:
+			return get_mag_feature_report(reportnum, buf, len);
+		default:
+			return -EINVAL;
+		}
 	case HID_INPUT_REPORT:
-		return get_input_report(hid_data->sensor_idx, reportnum, buf,
-					len, hid_data->cpu_addr);
+		switch (hid_data->sensor_idx) {
+		case ACCEL_IDX:
+			return get_accel_input_report(reportnum, buf, len,
+						      hid_data->cpu_addr);
+		case ALS_IDX:
+			return get_als_input_report(reportnum, buf, len,
+						    hid_data->cpu_addr);
+		case GYRO_IDX:
+			return get_gyro_input_report(reportnum, buf, len,
+						     hid_data->cpu_addr);
+		case MAG_IDX:
+			return get_mag_input_report(reportnum, buf, len,
+						    hid_data->cpu_addr);
+		default:
+			return -EINVAL;
+		}
 	default:
-		hid_err(hid, "Unsupported report type: %u\n", rtype);
 		return -EINVAL;
 	}
 }
@@ -170,10 +204,10 @@ static int amd_sfh_hid_ll_raw_request(struct hid_device *hid,
  * The HID low-level driver for SFH HID devices.
  */
 struct hid_ll_driver amd_sfh_hid_ll_driver = {
-	.parse	=	amd_sfh_hid_ll_parse,
-	.start	=	amd_sfh_hid_ll_start,
-	.stop	=	amd_sfh_hid_ll_stop,
-	.open	=	amd_sfh_hid_ll_open,
-	.close	=	amd_sfh_hid_ll_close,
-	.raw_request  =	amd_sfh_hid_ll_raw_request,
+	.parse	=	parse,
+	.start	=	start,
+	.stop	=	stop,
+	.open	=	open,
+	.close	=	close,
+	.raw_request  =	raw_request,
 };

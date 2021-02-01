@@ -14,7 +14,6 @@
 #include "amd-sfh.h"
 #include "amd-sfh-client.h"
 #include "amd-sfh-hid-ll-drv.h"
-#include "amd-sfh-hid-reports.h"
 #include "amd-sfh-pci.h"
 
 #define AMD_SFH_HID_VENDOR	0x3fe
@@ -46,9 +45,9 @@ static char *get_sensor_name(enum sensor_idx sensor_idx)
 
 /**
  * get_hid_data - Allocate and initialize HID device driver data.
- * @hid:	The HID device
- * @pci_dev:	The SFH PCI device
- * @sensor_idx:	The sensor index
+ * @hid:		HID device
+ * @pci_dev:		SFH PCI device
+ * @sensor_idx:		Sensor index
  *
  * Returns a pointer to the HID driver data on success or an ERR_PTR on error.
  */
@@ -57,61 +56,23 @@ static struct amd_sfh_hid_data *get_hid_data(struct hid_device *hid,
 					     enum sensor_idx sensor_idx)
 {
 	struct amd_sfh_hid_data *hid_data;
-	int rc;
 
 	hid_data = devm_kzalloc(&pci_dev->dev, sizeof(*hid_data), GFP_KERNEL);
-	if (!hid_data) {
-		rc = -ENOMEM;
-		goto error;
-	}
+	if (!hid_data)
+		return ERR_PTR(-ENOMEM);
 
 	hid_data->hid = hid;
 	hid_data->pci_dev = pci_dev;
 	hid_data->sensor_idx = sensor_idx;
 	hid_data->cpu_addr = NULL;
 
-	rc = get_descriptor_size(sensor_idx, AMD_SFH_DESCRIPTOR);
-	if (rc < 0)
-		goto free_hid_data;
-
-	hid_data->descriptor_size = rc;
-
-	hid_data->descriptor_buf = devm_kzalloc(&pci_dev->dev, rc, GFP_KERNEL);
-	if (!hid_data->descriptor_buf) {
-		rc = -ENOMEM;
-		goto free_hid_data;
-	}
-
-	rc = get_report_descriptor(sensor_idx, hid_data->descriptor_buf);
-	if (rc)
-		goto free_descriptor;
-
-	rc = get_descriptor_size(sensor_idx, AMD_SFH_INPUT_REPORT);
-	if (rc < 0)
-		goto free_descriptor;
-
-	hid_data->report_size = rc;
-
-	hid_data->report_buf = devm_kzalloc(&pci_dev->dev, rc, GFP_KERNEL);
-	if (!hid_data->report_buf) {
-		rc = -ENOMEM;
-		goto free_descriptor;
-	}
-
 	return hid_data;
-
-free_descriptor:
-	devm_kfree(&pci_dev->dev, hid_data->descriptor_buf);
-free_hid_data:
-	devm_kfree(&pci_dev->dev, hid_data);
-error:
-	return ERR_PTR(rc);
 }
 
 /**
  * get_hid_device - Creates a HID device for a sensor on th SFH.
- * @pci_dev:		The underlying PCI device
- * @sensor_idx:		The sensor index
+ * @pci_dev:		Underlying PCI device
+ * @sensor_idx:		Sensor index
  *
  * Sets up the HID device and the corresponding HID driver data.
  * Returns a pointer to the new HID device or NULL on errors.
@@ -155,11 +116,13 @@ static struct hid_device *get_hid_device(struct pci_dev *pci_dev,
 	rc = hid_add_device(hid);
 	if (rc)	{
 		hid_err(hid, "Failed to add HID device: %d\n", rc);
-		goto destroy_hid_device;
+		goto free_hid_data;
 	}
 
 	return hid;
 
+free_hid_data:
+	devm_kfree(&pci_dev->dev, hid->driver_data);
 destroy_hid_device:
 	hid_destroy_device(hid);
 err_hid_alloc:
@@ -168,7 +131,7 @@ err_hid_alloc:
 
 /**
  * amd_sfh_client_init - Initializes the HID devices.
- * @privdata:	The driver data
+ * @privdata:	Driver data
  *
  * Matches the sensor bitmasks against the sensor bitmask retrieved
  * from amd_sfh_get_sensor_mask().
@@ -194,7 +157,7 @@ void amd_sfh_client_init(struct amd_sfh_data *privdata)
 	else
 		privdata->sensors[i++] = NULL;
 
-	if (sensor_mask & MAGNO_MASK)
+	if (sensor_mask & MAG_MASK)
 		privdata->sensors[i++] = get_hid_device(pci_dev, MAG_IDX);
 	else
 		privdata->sensors[i++] = NULL;
@@ -207,7 +170,7 @@ void amd_sfh_client_init(struct amd_sfh_data *privdata)
 
 /**
  * amd_sfh_client_deinit - Removes all active HID devices.
- * @privdata:	The driver data
+ * @privdata:	Driver data
  *
  * Destroys all initialized HID devices.
  */
