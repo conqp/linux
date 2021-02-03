@@ -2,7 +2,7 @@
 /*
  *  AMD Sensor Fusion Hub quirks interface
  *
- *  Authors: Richard Neumann <mail@richard-neumann.de>
+ *  Author:	Richard Neumann <mail@richard-neumann.de>
  */
 
 #ifndef AMD_SFH_QUIRKS_H
@@ -19,6 +19,6 @@ struct amd_sfh_quirks {
 	uint sensor_mask;
 };
 
-const struct amd_sfh_quirks *amd_sfh_get_quirks(void);
+struct amd_sfh_quirks *amd_sfh_get_quirks(void);
 
 #endif

@@ -16,7 +16,6 @@
 #include <linux/types.h>
 #include <linux/workqueue.h>
 
-#define AMD_SFH_DMA_SIZE		(sizeof(int) * 8)
 #define AMD_SFH_FW_MUL			1000
 #define AMD_SFH_CONNECTION_TYPE		0x01
 #define AMD_SFH_REPORT_STATE		0x41
@@ -57,7 +56,7 @@ struct common_inputs {
 	u8 event_type;
 } __packed;
 
-enum amd_sfh_sensor_state {
+enum sensor_state {
 	AMD_SFH_SENSOR_READY = 0x02,
 	AMD_SFH_SENSOR_INITIALIZING = 0x05,
 };
@@ -90,5 +89,26 @@ static inline void set_common_inputs(struct common_inputs *common,
 	common->sensor_state = AMD_SFH_SENSOR_READY;
 	common->event_type = AMD_SFH_EVENT_TYPE;
 }
+
+/* Sensor interfaces */
+// Accelerometer
+int get_accel_feature_report(int reportnum, u8 *buf, size_t len);
+int get_accel_input_report(int reportnum, u8 *buf, size_t len, u32 *cpu_addr);
+int parse_accel_descriptor(struct hid_device *hid);
+
+// Ambient light sensor
+int get_als_feature_report(int reportnum, u8 *buf, size_t len);
+int get_als_input_report(int reportnum, u8 *buf, size_t len, u32 *cpu_addr);
+int parse_als_descriptor(struct hid_device *hid);
+
+// Gyroscope
+int get_gyro_feature_report(int reportnum, u8 *buf, size_t len);
+int get_gyro_input_report(int reportnum, u8 *buf, size_t len, u32 *cpu_addr);
+int parse_gyro_descriptor(struct hid_device *hid);
+
+// Magnetometer
+int get_mag_feature_report(int reportnum, u8 *buf, size_t len);
+int get_mag_input_report(int reportnum, u8 *buf, size_t len, u32 *cpu_addr);
+int parse_mag_descriptor(struct hid_device *hid);
 
 #endif

@@ -2,9 +2,9 @@
 /*
  * AMD Sensor Fusion Hub HID low-level driver
  *
- * Authors: Sandeep Singh <sandeep.singh@amd.com>
- *          Nehal Bakulchandra Shah <Nehal-bakulchandra.shah@amd.com>
- *          Richard Neumann <mail@richard-neumann.de>
+ * Authors:	Sandeep Singh <sandeep.singh@amd.com>
+ *		Nehal Bakulchandra Shah <Nehal-bakulchandra.shah@amd.com>
+ *		Richard Neumann <mail@richard-neumann.de>
  */
 
 #include <linux/dma-mapping.h>
@@ -16,10 +16,7 @@
 #include "amd-sfh.h"
 #include "amd-sfh-hid-ll-drv.h"
 #include "amd-sfh-pci.h"
-#include "sensors/amd-sfh-accel.h"
-#include "sensors/amd-sfh-als.h"
-#include "sensors/amd-sfh-gyro.h"
-#include "sensors/amd-sfh-mag.h"
+#include "sensors/amd-sfh-sensors.h"
 
 #define AMD_SFH_HID_DMA_SIZE	(sizeof(int) * 8)
 
